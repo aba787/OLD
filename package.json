@@ -1,0 +1,30 @@
+{
+  "name": "careconnect-volunteer-platform",
+  "version": "1.0.0",
+  "description": "A humanitarian volunteer platform connecting elderly people with trusted volunteers",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js"
+  },
+  "keywords": [
+    "volunteer",
+    "humanitarian",
+    "elderly",
+    "community",
+    "nodejs",
+    "express",
+    "firebase"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^22.13.11",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-validator": "^7.2.1",
+    "firebase-admin": "^13.0.2"
+  }
+}
