@@ -59,17 +59,22 @@ async function loadUserProfile() {
       profile = await apiRequest('/api/auth/profile');
     } catch (error) {
       console.warn('Could not load profile from backend:', error);
+      // Show error to user instead of silently defaulting
+      showError('Could not load your profile. Please try logging in again or contact support if this persists.');
+      return;
     }
     
-    // If no profile from backend, use Firebase user data
-    if (!profile) {
+    // If no profile from backend, use Firebase user data as fallback
+    // This handles new users who haven't completed registration yet
+    if (!profile || !profile.role) {
       profile = {
         uid: currentUser.uid,
         email: currentUser.email,
         fullName: currentUser.displayName || 'User',
-        role: 'elderly', // Default role
-        status: 'approved'
+        role: 'elderly', // Default to elderly for new users
+        status: 'pending'
       };
+      console.info('Using default profile for new user');
     }
     
     currentRole = profile.role;

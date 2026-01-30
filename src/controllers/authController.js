@@ -11,6 +11,7 @@ const { validationResult } = require('express-validator');
 /**
  * Register a new user
  * Called after successful Firebase authentication on the client side
+ * SECURITY: User identity is derived from verified token, not client input
  */
 const register = async (req, res) => {
   try {
@@ -20,10 +21,13 @@ const register = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { uid, email, fullName, phone, role, address } = req.body;
+    // SECURITY: Use verified user info from token, not client-supplied data
+    const uid = req.user.uid;
+    const email = req.user.email;
+    const { fullName, phone, role, address } = req.body;
 
     if (!uid || !email) {
-      return res.status(400).json({ error: 'User ID and email are required' });
+      return res.status(400).json({ error: 'Authentication required' });
     }
 
     // Create user document in Firestore

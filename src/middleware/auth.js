@@ -12,6 +12,7 @@ const { auth, db } = require('../firebase');
 /**
  * Verify Firebase ID Token
  * This middleware checks if the request has a valid Firebase auth token
+ * In demo mode, accepts a demo header for testing
  */
 const verifyToken = async (req, res, next) => {
   try {
@@ -23,6 +24,25 @@ const verifyToken = async (req, res, next) => {
       token = authHeader.split('Bearer ')[1];
     } else if (req.cookies && req.cookies.authToken) {
       token = req.cookies.authToken;
+    }
+
+    // DEMO MODE: Allow demo access when Firebase is not configured
+    // Check for demo header or if no auth service is available
+    const demoMode = req.headers['x-demo-mode'] === 'true';
+    const demoRole = req.headers['x-demo-role'] || 'elderly';
+    
+    if (!auth) {
+      // Demo mode - use demo user based on headers or defaults
+      if (demoMode || !token) {
+        req.user = { 
+          uid: 'demo-user-' + demoRole, 
+          email: `demo-${demoRole}@example.com`, 
+          role: demoRole,
+          fullName: 'Demo ' + demoRole.charAt(0).toUpperCase() + demoRole.slice(1),
+          status: 'approved'
+        };
+        return next();
+      }
     }
 
     if (!token) {
@@ -57,9 +77,6 @@ const verifyToken = async (req, res, next) => {
           }
         }
       }
-    } else {
-      // Demo mode - extract user from token (for testing without Firebase)
-      req.user = { uid: 'demo-user', email: 'demo@example.com', role: 'admin' };
     }
 
     next();

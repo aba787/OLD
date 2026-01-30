@@ -34,8 +34,9 @@ const profileValidation = [
  * POST /api/auth/register
  * Register a new user after Firebase authentication
  * Creates user document in Firestore with initial pending status
+ * Requires valid Firebase token to prevent impersonation
  */
-router.post('/register', registerValidation, authController.register);
+router.post('/register', verifyToken, registerValidation, authController.register);
 
 /**
  * POST /api/auth/verify
