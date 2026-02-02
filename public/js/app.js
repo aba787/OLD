@@ -1,7 +1,8 @@
 /**
- * Main Application JavaScript
+ * Main Application JavaScript - جافاسكريبت التطبيق الرئيسي
  * 
  * General utilities and functions for the public pages
+ * الأدوات والوظائف العامة للصفحات العامة
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -68,17 +69,17 @@ function debounce(func, wait) {
 }
 
 /**
- * Utility: Format currency
+ * Utility: Format currency (Arabic) - تنسيق العملة
  */
 function formatCurrency(amount) {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('ar-SA', {
     style: 'currency',
-    currency: 'USD'
+    currency: 'SAR'
   }).format(amount);
 }
 
 /**
- * Utility: Show toast notification
+ * Utility: Show toast notification - عرض إشعار
  */
 function showToast(message, type = 'info') {
   const toast = document.createElement('div');
@@ -87,34 +88,70 @@ function showToast(message, type = 'info') {
   toast.style.cssText = `
     position: fixed;
     bottom: 20px;
-    right: 20px;
+    left: 20px;
     padding: 1rem 1.5rem;
     border-radius: 8px;
     color: white;
     background: ${type === 'error' ? '#e74c3c' : type === 'success' ? '#27ae60' : '#4a90a4'};
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     z-index: 1000;
-    animation: slideIn 0.3s ease;
+    animation: slideInRTL 0.3s ease;
+    font-family: 'Segoe UI', Tahoma, 'Cairo', 'Noto Sans Arabic', sans-serif;
   `;
   
   document.body.appendChild(toast);
   
   setTimeout(() => {
-    toast.style.animation = 'slideOut 0.3s ease';
+    toast.style.animation = 'slideOutRTL 0.3s ease';
     setTimeout(() => toast.remove(), 300);
   }, 3000);
 }
 
-// Add toast animations
+// Add toast animations for RTL
 const toastStyles = document.createElement('style');
 toastStyles.textContent = `
-  @keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
+  @keyframes slideInRTL {
+    from { transform: translateX(-100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
   }
-  @keyframes slideOut {
+  @keyframes slideOutRTL {
     from { transform: translateX(0); opacity: 1; }
-    to { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(-100%); opacity: 0; }
   }
 `;
 document.head.appendChild(toastStyles);
+
+/**
+ * API Request helper - مساعد طلبات الـ API
+ */
+async function apiRequest(url, options = {}) {
+  const defaultHeaders = {
+    'Content-Type': 'application/json'
+  };
+  
+  // Add auth token if available
+  if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+    try {
+      const token = await firebase.auth().currentUser.getIdToken();
+      defaultHeaders['Authorization'] = `Bearer ${token}`;
+    } catch (error) {
+      console.warn('Could not get auth token:', error);
+    }
+  }
+  
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...defaultHeaders,
+      ...options.headers
+    }
+  });
+  
+  const data = await response.json();
+  
+  if (!response.ok) {
+    throw new Error(data.message || 'حدث خطأ في الطلب');
+  }
+  
+  return data;
+}

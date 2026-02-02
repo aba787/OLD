@@ -71,6 +71,101 @@ html[dir="rtl"] .sidebar {
   border-left: 1px solid var(--border-color);
 }
 
+html[dir="rtl"] .modal-actions {
+  flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .checkbox-label {
+  flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .form-group input,
+html[dir="rtl"] .form-group textarea,
+html[dir="rtl"] .form-group select {
+  text-align: right;
+}
+
+html[dir="rtl"] .nav-links {
+  flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .user-item-actions {
+  flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .request-actions {
+  flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .cta-buttons {
+  flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .sidebar-nav a span {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+html[dir="rtl"] .request-meta {
+  flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .stat-card {
+  text-align: center;
+}
+
+html[dir="rtl"] .action-btn {
+  text-align: center;
+}
+
+/* Elderly-friendly enhancements - تحسينات صديقة لكبار السن */
+.btn {
+  font-size: 1.1rem;
+}
+
+.btn-large {
+  font-size: 1.25rem;
+  padding: 1.2rem 2.5rem;
+}
+
+.form-group label {
+  font-size: 1.1rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  font-size: 1.1rem;
+  padding: 1rem 1.25rem;
+}
+
+.action-btn {
+  font-size: 1.1rem;
+}
+
+.stat-value {
+  font-size: 2.5rem;
+}
+
+/* Better focus states for accessibility - حالات التركيز للوصولية */
+.btn:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 3px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* High contrast for readability - تباين عالي للقراءة */
+.form-group label {
+  font-weight: 600;
+}
+
+.auth-card h2,
+.dashboard-section h3 {
+  font-size: 1.5rem;
+}
+
 a {
   color: var(--primary-color);
   text-decoration: none;
