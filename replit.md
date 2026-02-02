@@ -1,7 +1,9 @@
-# CareConnect - Humanitarian Volunteer Platform
+# رعاية - منصة التطوع الإنسانية (CareConnect)
 
-## Overview
-CareConnect is a full-stack web application that connects elderly people with trusted volunteers for everyday assistance. The platform includes admin supervision for safety and allows organizations (charities) to verify volunteers.
+## نظرة عامة (Overview)
+رعاية هي تطبيق ويب كامل يربط كبار السن بمتطوعين موثوقين للمساعدة اليومية. تتضمن المنصة إشراف المسؤول للأمان وتسمح للمنظمات (الجمعيات الخيرية) بالتحقق من المتطوعين.
+
+CareConnect is a full-stack Arabic web application (RTL) that connects elderly people with trusted volunteers for everyday assistance. The platform includes admin supervision for safety and allows organizations (charities) to verify volunteers.
 
 ## Tech Stack
 - **Backend**: Node.js + Express.js

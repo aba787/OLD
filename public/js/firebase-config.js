@@ -5,15 +5,15 @@
  * Replace the configuration values with your Firebase project settings.
  */
 
-// Firebase configuration object
-// Get these values from your Firebase Console > Project Settings > SDK setup
+// Firebase configuration object - إعدادات Firebase
 const firebaseConfig = {
-  apiKey: "YOUR_FIREBASE_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyA5nGDhecSDYlry2GG1VPB68QBgxHuSyTI",
+  authDomain: "older-people-a49ea.firebaseapp.com",
+  projectId: "older-people-a49ea",
+  storageBucket: "older-people-a49ea.firebasestorage.app",
+  messagingSenderId: "719326243073",
+  appId: "1:719326243073:web:7354a5932c20f2f57f1300",
+  measurementId: "G-LHKEJ7ZX0P"
 };
 
 // Check if we have environment-provided config (for production)

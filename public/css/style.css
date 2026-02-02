@@ -1,6 +1,7 @@
 /**
+ * رعاية - الأنماط الرئيسية
+ * منصة التطوع الإنسانية
  * CareConnect - Main Stylesheet
- * A humanitarian volunteer platform
  */
 
 /* CSS Variables for consistent theming */
@@ -31,10 +32,43 @@
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Segoe UI', Tahoma, 'Cairo', 'Noto Sans Arabic', sans-serif;
   background-color: var(--bg-color);
   color: var(--text-color);
-  line-height: 1.6;
+  line-height: 1.8;
+}
+
+/* RTL Support - دعم اللغة العربية */
+html[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+}
+
+html[dir="rtl"] .user-info {
+  margin-left: 1rem;
+  margin-right: 0;
+}
+
+html[dir="rtl"] .request-item {
+  border-left: none;
+  border-right: 4px solid var(--primary-color);
+}
+
+html[dir="rtl"] .request-item.urgency-high {
+  border-right-color: var(--danger-color);
+}
+
+html[dir="rtl"] .request-item.urgency-medium {
+  border-right-color: var(--warning-color);
+}
+
+html[dir="rtl"] .request-item.urgency-low {
+  border-right-color: var(--success-color);
+}
+
+html[dir="rtl"] .sidebar {
+  border-right: none;
+  border-left: 1px solid var(--border-color);
 }
 
 a {

@@ -1,0 +1,126 @@
+Build a full Arabic full-stack web application for a humanitarian volunteer platform
+that connects elderly people with trusted volunteers under admin supervision.
+
+Language & UI:
+- The entire website must be in Arabic (RTL)
+- Clean, simple, accessible UI
+- Suitable for elderly users
+- Responsive (mobile + desktop)
+
+Tech stack:
+- Frontend: HTML, CSS, Vanilla JavaScript (no React)
+- Backend: Node.js + Express
+- Authentication: Firebase Authentication (Email/Password)
+- Database: Firebase Firestore
+- Storage: Firebase Storage
+- Hosting/Development: Replit
+
+Firebase Web SDK configuration (use exactly this):
+```js
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA5nGDhecSDYlry2GG1VPB68QBgxHuSyTI",
+  authDomain: "older-people-a49ea.firebaseapp.com",
+  projectId: "older-people-a49ea",
+  storageBucket: "older-people-a49ea.firebasestorage.app",
+  messagingSenderId: "719326243073",
+  appId: "1:719326243073:web:7354a5932c20f2f57f1300",
+  measurementId: "G-LHKEJ7ZX0P"
+};
+User roles:
+
+Admin
+
+Volunteer
+
+Elderly user
+
+Organization
+
+Core features:
+
+Real user registration & login with Firebase Auth
+
+Store users in Firestore with:
+
+uid
+
+name
+
+email
+
+role
+
+approved (false by default)
+
+createdAt
+
+No user can access the system until admin approval
+
+Admin dashboard to:
+
+Approve / reject users
+
+View all users
+
+Volunteer:
+
+Profile
+
+Log volunteering hours
+
+Elderly user:
+
+Create help requests (shopping, hospital, paperwork, companionship)
+
+Organization:
+
+Register official data
+
+Await approval
+
+Security:
+
+Role-based access control
+
+Prevent unapproved users from accessing dashboards
+
+Firestore rules compatible with this structure
+
+Pages to generate:
+
+index.html (Arabic landing page)
+
+login.html
+
+register.html
+
+dashboards based on role (admin / volunteer / elderly / organization)
+
+Project structure:
+
+public/
+
+src/
+
+server.js
+
+routes/
+
+middleware/
+
+firebase.js
+
+Important:
+
+This is a real, working project (not mockups)
+
+Data must be created dynamically via Firebase
+
+Code must be clean and understandable for a graduation project
+
+Add comments explaining logic

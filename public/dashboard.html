@@ -1,27 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard - CareConnect</title>
+  <title>لوحة التحكم - رعاية</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
   <nav class="navbar">
     <div class="nav-brand">
-      <a href="/dashboard"><h1>CareConnect</h1></a>
+      <a href="/dashboard"><h1>رعاية</h1></a>
     </div>
     <div class="nav-links">
       <span id="user-info" class="user-info"></span>
-      <button id="logout-btn" class="btn btn-outline">Logout</button>
+      <button id="logout-btn" class="btn btn-outline">تسجيل الخروج</button>
     </div>
   </nav>
 
   <div class="dashboard-container">
-    <!-- Sidebar Navigation -->
+    <!-- Sidebar Navigation - القائمة الجانبية -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
-        <h3 id="role-title">Dashboard</h3>
+        <h3 id="role-title">لوحة التحكم</h3>
         <span id="status-badge" class="status-badge"></span>
       </div>
       <nav class="sidebar-nav" id="sidebar-nav">
@@ -29,221 +29,221 @@
       </nav>
     </aside>
 
-    <!-- Main Content Area -->
+    <!-- Main Content Area - المحتوى الرئيسي -->
     <main class="dashboard-main">
       <div id="loading-screen" class="loading-screen">
         <div class="loading-spinner"></div>
-        <p>Loading your dashboard...</p>
+        <p>جارٍ تحميل لوحة التحكم...</p>
       </div>
 
-      <!-- Admin Dashboard -->
+      <!-- Admin Dashboard - لوحة تحكم المشرف -->
       <div id="admin-dashboard" class="dashboard-content hidden">
-        <h2>Admin Dashboard</h2>
+        <h2>لوحة تحكم المشرف</h2>
         
         <div class="stats-grid" id="admin-stats">
           <div class="stat-card">
-            <h3>Total Users</h3>
+            <h3>إجمالي المستخدمين</h3>
             <p class="stat-value" id="stat-total-users">-</p>
           </div>
           <div class="stat-card">
-            <h3>Pending Approvals</h3>
+            <h3>في انتظار الموافقة</h3>
             <p class="stat-value" id="stat-pending">-</p>
           </div>
           <div class="stat-card">
-            <h3>Active Volunteers</h3>
+            <h3>المتطوعون النشطون</h3>
             <p class="stat-value" id="stat-volunteers">-</p>
           </div>
           <div class="stat-card">
-            <h3>Help Requests</h3>
+            <h3>طلبات المساعدة</h3>
             <p class="stat-value" id="stat-requests">-</p>
           </div>
         </div>
 
         <section class="dashboard-section">
-          <h3>Pending Approvals</h3>
+          <h3>في انتظار الموافقة</h3>
           <div id="pending-users-list" class="user-list">
-            <p class="empty-state">Loading pending approvals...</p>
+            <p class="empty-state">جارٍ تحميل الطلبات المعلقة...</p>
           </div>
         </section>
 
         <section class="dashboard-section">
-          <h3>Recent Activity</h3>
+          <h3>النشاط الأخير</h3>
           <div id="recent-activity" class="activity-list">
-            <p class="empty-state">Loading recent activity...</p>
+            <p class="empty-state">جارٍ تحميل النشاط الأخير...</p>
           </div>
         </section>
       </div>
 
-      <!-- Volunteer Dashboard -->
+      <!-- Volunteer Dashboard - لوحة تحكم المتطوع -->
       <div id="volunteer-dashboard" class="dashboard-content hidden">
-        <h2>Volunteer Dashboard</h2>
+        <h2>لوحة تحكم المتطوع</h2>
         
         <div id="pending-approval-notice" class="notice notice-warning hidden">
-          <p>Your account is pending approval. Some features are restricted.</p>
+          <p>حسابك في انتظار موافقة المشرف. بعض الميزات محدودة.</p>
         </div>
 
         <div class="stats-grid">
           <div class="stat-card">
-            <h3>Total Hours</h3>
+            <h3>إجمالي الساعات</h3>
             <p class="stat-value" id="vol-total-hours">-</p>
           </div>
           <div class="stat-card">
-            <h3>Completed Requests</h3>
+            <h3>الطلبات المكتملة</h3>
             <p class="stat-value" id="vol-completed">-</p>
           </div>
           <div class="stat-card">
-            <h3>Rating</h3>
+            <h3>التقييم</h3>
             <p class="stat-value" id="vol-rating">-</p>
           </div>
           <div class="stat-card">
-            <h3>Status</h3>
+            <h3>الحالة</h3>
             <p class="stat-value" id="vol-status">-</p>
           </div>
         </div>
 
         <section class="dashboard-section">
-          <h3>Available Help Requests</h3>
+          <h3>طلبات المساعدة المتاحة</h3>
           <div id="available-requests" class="request-list">
-            <p class="empty-state">Loading available requests...</p>
+            <p class="empty-state">جارٍ تحميل الطلبات المتاحة...</p>
           </div>
         </section>
 
         <section class="dashboard-section">
-          <h3>My Active Requests</h3>
+          <h3>طلباتي النشطة</h3>
           <div id="my-active-requests" class="request-list">
-            <p class="empty-state">No active requests</p>
+            <p class="empty-state">لا توجد طلبات نشطة</p>
           </div>
         </section>
       </div>
 
-      <!-- Elderly Dashboard -->
+      <!-- Elderly Dashboard - لوحة تحكم كبار السن -->
       <div id="elderly-dashboard" class="dashboard-content hidden">
-        <h2>My Dashboard</h2>
+        <h2>لوحة التحكم الخاصة بي</h2>
         
         <div class="quick-actions">
-          <h3>Request Help</h3>
+          <h3>اطلب المساعدة</h3>
           <div class="action-buttons">
             <button class="action-btn" onclick="openRequestModal('shopping')">
               <span class="action-icon">&#128722;</span>
-              <span>Shopping</span>
+              <span>التسوق</span>
             </button>
             <button class="action-btn" onclick="openRequestModal('hospital')">
               <span class="action-icon">&#127973;</span>
-              <span>Hospital Visit</span>
+              <span>زيارة المستشفى</span>
             </button>
             <button class="action-btn" onclick="openRequestModal('paperwork')">
               <span class="action-icon">&#128196;</span>
-              <span>Paperwork</span>
+              <span>الأوراق الرسمية</span>
             </button>
             <button class="action-btn" onclick="openRequestModal('companionship')">
               <span class="action-icon">&#128172;</span>
-              <span>Companionship</span>
+              <span>المرافقة</span>
             </button>
           </div>
         </div>
 
         <section class="dashboard-section">
-          <h3>My Requests</h3>
+          <h3>طلباتي</h3>
           <div id="elderly-requests" class="request-list">
-            <p class="empty-state">Loading your requests...</p>
+            <p class="empty-state">جارٍ تحميل طلباتك...</p>
           </div>
         </section>
       </div>
 
-      <!-- Organization Dashboard -->
+      <!-- Organization Dashboard - لوحة تحكم المنظمة -->
       <div id="organization-dashboard" class="dashboard-content hidden">
-        <h2>Organization Dashboard</h2>
+        <h2>لوحة تحكم المنظمة</h2>
         
         <div id="org-pending-notice" class="notice notice-warning hidden">
-          <p>Your organization account is pending approval.</p>
+          <p>حساب منظمتك في انتظار موافقة المشرف.</p>
         </div>
 
         <div class="stats-grid">
           <div class="stat-card">
-            <h3>Verified Volunteers</h3>
+            <h3>المتطوعون المعتمدون</h3>
             <p class="stat-value" id="org-verified">-</p>
           </div>
           <div class="stat-card">
-            <h3>Pending Verifications</h3>
+            <h3>في انتظار التحقق</h3>
             <p class="stat-value" id="org-pending-verifications">-</p>
           </div>
         </div>
 
         <section class="dashboard-section">
-          <h3>Organization Profile</h3>
+          <h3>ملف المنظمة</h3>
           <form id="org-profile-form" class="profile-form">
             <div class="form-row">
               <div class="form-group">
-                <label for="org-name">Organization Name</label>
+                <label for="org-name">اسم المنظمة</label>
                 <input type="text" id="org-name" name="organizationName">
               </div>
               <div class="form-group">
-                <label for="org-reg">Registration Number</label>
+                <label for="org-reg">رقم التسجيل</label>
                 <input type="text" id="org-reg" name="registrationNumber">
               </div>
             </div>
             <div class="form-group">
-              <label for="org-desc">Description</label>
+              <label for="org-desc">الوصف</label>
               <textarea id="org-desc" name="description" rows="3"></textarea>
             </div>
-            <button type="submit" class="btn btn-primary">Update Profile</button>
+            <button type="submit" class="btn btn-primary">تحديث الملف</button>
           </form>
         </section>
 
         <section class="dashboard-section">
-          <h3>Verified Volunteers</h3>
+          <h3>المتطوعون المعتمدون</h3>
           <div id="org-volunteers-list" class="user-list">
-            <p class="empty-state">Loading volunteers...</p>
+            <p class="empty-state">جارٍ تحميل المتطوعين...</p>
           </div>
         </section>
       </div>
     </main>
   </div>
 
-  <!-- Request Modal -->
+  <!-- Request Modal - نافذة إنشاء الطلب -->
   <div id="request-modal" class="modal hidden">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Create Help Request</h3>
+        <h3>إنشاء طلب مساعدة</h3>
         <button class="modal-close" onclick="closeModal()">&times;</button>
       </div>
       <form id="request-form">
         <input type="hidden" id="request-type" name="type">
         
         <div class="form-group">
-          <label for="request-description">What do you need help with? *</label>
+          <label for="request-description">ما الذي تحتاج المساعدة فيه؟ *</label>
           <textarea 
             id="request-description" 
             name="description" 
             rows="4" 
             required
-            placeholder="Please describe your request..."
+            placeholder="يرجى وصف طلبك..."
           ></textarea>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="request-urgency">Urgency Level *</label>
+            <label for="request-urgency">مستوى الاستعجال *</label>
             <select id="request-urgency" name="urgency" required>
-              <option value="low">Low - Within a week</option>
-              <option value="medium" selected>Medium - Within 2-3 days</option>
-              <option value="high">High - As soon as possible</option>
+              <option value="low">منخفض - خلال أسبوع</option>
+              <option value="medium" selected>متوسط - خلال ٢-٣ أيام</option>
+              <option value="high">عاجل - في أقرب وقت</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="request-date">Preferred Date</label>
+            <label for="request-date">التاريخ المفضل</label>
             <input type="date" id="request-date" name="preferredDate">
           </div>
         </div>
 
         <div class="form-group">
-          <label for="request-address">Address (if different from profile)</label>
-          <input type="text" id="request-address" name="address" placeholder="Leave empty to use profile address">
+          <label for="request-address">العنوان (إذا كان مختلفاً عن ملفك الشخصي)</label>
+          <input type="text" id="request-address" name="address" placeholder="اتركه فارغاً لاستخدام عنوان الملف الشخصي">
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary">Submit Request</button>
+          <button type="button" class="btn btn-outline" onclick="closeModal()">إلغاء</button>
+          <button type="submit" class="btn btn-primary">إرسال الطلب</button>
         </div>
       </form>
     </div>

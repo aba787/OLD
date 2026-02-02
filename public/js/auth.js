@@ -1,11 +1,11 @@
 /**
- * Authentication JavaScript
+ * Authentication JavaScript - جافاسكريبت المصادقة
  * 
  * Handles login, registration, and authentication state on the client side.
+ * يتعامل مع تسجيل الدخول والتسجيل وحالة المصادقة
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Check which page we're on
   const loginForm = document.getElementById('login-form');
   const registerForm = document.getElementById('register-form');
   
@@ -13,18 +13,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof firebase !== 'undefined' && firebase.auth) {
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
-        // User is signed in, redirect to dashboard
         window.location.href = '/dashboard';
       }
     });
   }
   
-  // Handle Login Form
   if (loginForm) {
     loginForm.addEventListener('submit', handleLogin);
   }
   
-  // Handle Register Form
   if (registerForm) {
     registerForm.addEventListener('submit', handleRegister);
     
@@ -46,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * Handle Login Form Submission
+ * Handle Login Form Submission - معالجة تسجيل الدخول
  */
 async function handleLogin(e) {
   e.preventDefault();
@@ -59,44 +56,35 @@ async function handleLogin(e) {
   const loginLoading = document.getElementById('login-loading');
   const loginBtn = document.getElementById('login-btn');
   
-  // Reset messages
   errorEl.classList.add('hidden');
   successEl.classList.add('hidden');
   
-  // Show loading state
   loginBtn.disabled = true;
   loginText.classList.add('hidden');
   loginLoading.classList.remove('hidden');
   
   try {
-    // Check if Firebase is configured
     if (typeof firebase === 'undefined' || !firebase.auth) {
-      throw new Error('Authentication system not configured. Please contact administrator.');
+      throw new Error('نظام المصادقة غير متاح. يرجى الاتصال بالمسؤول.');
     }
     
-    // Sign in with Firebase
     const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
-    
-    // Get ID token and verify with backend
     const token = await user.getIdToken();
     
     try {
-      const response = await apiRequest('/api/auth/verify', {
+      await apiRequest('/api/auth/verify', {
         method: 'POST',
         body: JSON.stringify({ token })
       });
       
-      successEl.textContent = 'Login successful! Redirecting...';
+      successEl.textContent = 'تم تسجيل الدخول بنجاح! جارٍ التحويل...';
       successEl.classList.remove('hidden');
       
-      // Redirect to dashboard
       setTimeout(() => {
         window.location.href = '/dashboard';
       }, 1000);
     } catch (apiError) {
-      // If backend verification fails, still allow access
-      // (backend might be in demo mode)
       console.warn('Backend verification failed, continuing anyway');
       window.location.href = '/dashboard';
     }
@@ -104,24 +92,22 @@ async function handleLogin(e) {
   } catch (error) {
     console.error('Login error:', error);
     
-    // Show user-friendly error message
-    let message = 'Failed to login. Please check your credentials.';
+    let message = 'فشل تسجيل الدخول. يرجى التحقق من بياناتك.';
     if (error.code === 'auth/user-not-found') {
-      message = 'No account found with this email address.';
+      message = 'لا يوجد حساب بهذا البريد الإلكتروني.';
     } else if (error.code === 'auth/wrong-password') {
-      message = 'Incorrect password. Please try again.';
+      message = 'كلمة المرور غير صحيحة. حاول مرة أخرى.';
     } else if (error.code === 'auth/invalid-email') {
-      message = 'Please enter a valid email address.';
+      message = 'يرجى إدخال بريد إلكتروني صحيح.';
     } else if (error.code === 'auth/too-many-requests') {
-      message = 'Too many failed attempts. Please try again later.';
-    } else if (error.message) {
-      message = error.message;
+      message = 'محاولات كثيرة جداً. حاول لاحقاً.';
+    } else if (error.code === 'auth/invalid-credential') {
+      message = 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
     }
     
     errorEl.textContent = message;
     errorEl.classList.remove('hidden');
   } finally {
-    // Reset loading state
     loginBtn.disabled = false;
     loginText.classList.remove('hidden');
     loginLoading.classList.add('hidden');
@@ -129,7 +115,7 @@ async function handleLogin(e) {
 }
 
 /**
- * Handle Registration Form Submission
+ * Handle Registration Form Submission - معالجة إنشاء الحساب
  */
 async function handleRegister(e) {
   e.preventDefault();
@@ -149,48 +135,42 @@ async function handleRegister(e) {
   const registerLoading = document.getElementById('register-loading');
   const registerBtn = document.getElementById('register-btn');
   
-  // Reset messages
   errorEl.classList.add('hidden');
   successEl.classList.add('hidden');
   
-  // Validate form
+  // Validate form - التحقق من النموذج
   if (!role) {
-    errorEl.textContent = 'Please select your role.';
+    errorEl.textContent = 'يرجى اختيار نوع الحساب.';
     errorEl.classList.remove('hidden');
     return;
   }
   
   if (password !== confirmPassword) {
-    errorEl.textContent = 'Passwords do not match.';
+    errorEl.textContent = 'كلمتا المرور غير متطابقتين.';
     errorEl.classList.remove('hidden');
     return;
   }
   
   if (password.length < 6) {
-    errorEl.textContent = 'Password must be at least 6 characters.';
+    errorEl.textContent = 'كلمة المرور يجب أن تكون ٦ أحرف على الأقل.';
     errorEl.classList.remove('hidden');
     return;
   }
   
-  // Show loading state
   registerBtn.disabled = true;
   registerText.classList.add('hidden');
   registerLoading.classList.remove('hidden');
   
   try {
-    // Check if Firebase is configured
     if (typeof firebase === 'undefined' || !firebase.auth) {
-      throw new Error('Authentication system not configured. Please contact administrator.');
+      throw new Error('نظام المصادقة غير متاح. يرجى الاتصال بالمسؤول.');
     }
     
-    // Create user with Firebase
     const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
     const user = userCredential.user;
     
-    // Update display name
     await user.updateProfile({ displayName: fullName });
     
-    // Prepare user data for backend
     const userData = {
       uid: user.uid,
       email,
@@ -200,13 +180,11 @@ async function handleRegister(e) {
       role
     };
     
-    // Add organization-specific data
     if (role === 'organization') {
       userData.organizationName = document.getElementById('organizationName').value;
       userData.registrationNumber = document.getElementById('registrationNumber').value || '';
     }
     
-    // Register with backend
     try {
       await apiRequest('/api/auth/register', {
         method: 'POST',
@@ -216,17 +194,15 @@ async function handleRegister(e) {
       console.warn('Backend registration failed, continuing anyway:', apiError);
     }
     
-    // Show success message
-    let successMessage = 'Account created successfully!';
+    let successMessage = 'تم إنشاء الحساب بنجاح!';
     if (role === 'volunteer' || role === 'organization') {
-      successMessage += ' Your account is pending admin approval.';
+      successMessage += ' حسابك في انتظار موافقة المشرف.';
     }
-    successMessage += ' Redirecting to dashboard...';
+    successMessage += ' جارٍ التحويل...';
     
     successEl.textContent = successMessage;
     successEl.classList.remove('hidden');
     
-    // Redirect to dashboard
     setTimeout(() => {
       window.location.href = '/dashboard';
     }, 2000);
@@ -234,22 +210,18 @@ async function handleRegister(e) {
   } catch (error) {
     console.error('Registration error:', error);
     
-    // Show user-friendly error message
-    let message = 'Failed to create account. Please try again.';
+    let message = 'فشل إنشاء الحساب. حاول مرة أخرى.';
     if (error.code === 'auth/email-already-in-use') {
-      message = 'An account with this email already exists.';
+      message = 'يوجد حساب بهذا البريد الإلكتروني.';
     } else if (error.code === 'auth/invalid-email') {
-      message = 'Please enter a valid email address.';
+      message = 'يرجى إدخال بريد إلكتروني صحيح.';
     } else if (error.code === 'auth/weak-password') {
-      message = 'Password is too weak. Please use a stronger password.';
-    } else if (error.message) {
-      message = error.message;
+      message = 'كلمة المرور ضعيفة. استخدم كلمة مرور أقوى.';
     }
     
     errorEl.textContent = message;
     errorEl.classList.remove('hidden');
   } finally {
-    // Reset loading state
     registerBtn.disabled = false;
     registerText.classList.remove('hidden');
     registerLoading.classList.add('hidden');
