@@ -139,6 +139,15 @@ The server will start on port 5000.
   - All JavaScript messages and alerts translated to Arabic
   - Added elderly-friendly enhancements (larger fonts, better focus states)
   - Fixed apiRequest availability across all pages
+- **February 2026**: Authentication & UI Polish
+  - Fixed profile loading using onAuthStateChanged and direct Firestore queries
+  - Profile paths: users/{uid}, volunteer_profiles/{uid}, organizations/{orgUid}
+  - No auto-logout if profile missing - shows setup message instead
+  - Prevents false error messages before auth is confirmed
+  - Added modern Arabic fonts (Cairo, Tajawal) from Google Fonts
+  - Updated color palette to softer, calmer tones
+  - Improved UI with cleaner shadows, better focus states, subtle hover effects
+  - Added Firestore SDK to dashboard for direct database access
 
 ## Notes
 - The application runs in demo mode if Firebase is not configured

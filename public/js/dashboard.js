@@ -7,6 +7,8 @@
 
 let currentUser = null;
 let currentRole = null;
+let userProfile = null;
+let authStateResolved = false;
 
 document.addEventListener('DOMContentLoaded', () => {
   initializeDashboard();
@@ -18,65 +20,183 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initializeDashboard() {
   if (typeof firebase === 'undefined' || !firebase.auth) {
     console.error('Firebase not loaded');
-    showError('نظام المصادقة غير متاح. يرجى تحديث الصفحة.');
+    showError('نظام المصادقة غير متاح. يرجى تحديث الصفحة.', true);
     return;
   }
   
   firebase.auth().onAuthStateChanged(async (user) => {
+    authStateResolved = true;
+    
     if (user) {
       currentUser = user;
-      await loadUserProfile();
+      await loadUserProfileFromFirestore(user.uid);
     } else {
       window.location.href = '/login';
     }
   });
   
-  document.getElementById('logout-btn').addEventListener('click', handleLogout);
+  document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
   document.getElementById('request-form')?.addEventListener('submit', handleCreateRequest);
   document.getElementById('org-profile-form')?.addEventListener('submit', handleUpdateOrgProfile);
 }
 
 /**
- * Load user profile - تحميل ملف المستخدم
+ * Load user profile from Firestore - تحميل ملف المستخدم من Firestore
  */
-async function loadUserProfile() {
+async function loadUserProfileFromFirestore(uid) {
   try {
-    let profile = null;
-    try {
-      profile = await apiRequest('/api/auth/profile');
-    } catch (error) {
-      console.warn('Could not load profile from backend:', error);
-      showError('تعذر تحميل ملفك الشخصي. يرجى تسجيل الدخول مرة أخرى.');
+    const db = firebase.firestore();
+    
+    const userDoc = await db.collection('users').doc(uid).get();
+    
+    if (!userDoc.exists) {
+      showProfileSetupMessage();
       return;
     }
     
-    if (!profile || !profile.role) {
-      profile = {
-        uid: currentUser.uid,
-        email: currentUser.email,
-        fullName: currentUser.displayName || 'مستخدم',
-        role: 'elderly',
-        status: 'pending'
-      };
-      console.info('Using default profile for new user');
+    const userData = userDoc.data();
+    currentRole = userData.role;
+    
+    let additionalProfile = null;
+    
+    if (userData.role === 'volunteer') {
+      try {
+        const volDoc = await db.collection('volunteer_profiles').doc(uid).get();
+        if (volDoc.exists) {
+          additionalProfile = volDoc.data();
+        }
+      } catch (e) {
+        console.warn('Could not load volunteer profile:', e);
+      }
+    } else if (userData.role === 'organization' && userData.organizationId) {
+      try {
+        const orgDoc = await db.collection('organizations').doc(userData.organizationId).get();
+        if (orgDoc.exists) {
+          additionalProfile = orgDoc.data();
+        }
+      } catch (e) {
+        console.warn('Could not load organization profile:', e);
+      }
     }
     
-    currentRole = profile.role;
+    userProfile = {
+      uid: uid,
+      email: currentUser.email,
+      fullName: userData.fullName || currentUser.displayName || 'مستخدم',
+      role: userData.role,
+      status: userData.status || 'approved',
+      phone: userData.phone || '',
+      address: userData.address || '',
+      ...additionalProfile
+    };
     
-    document.getElementById('user-info').textContent = `مرحباً، ${profile.fullName}`;
-    document.getElementById('role-title').textContent = getRoleTitle(profile.role);
-    
-    const statusBadge = document.getElementById('status-badge');
-    statusBadge.textContent = getStatusText(profile.status);
-    statusBadge.className = `status-badge status-${profile.status || 'approved'}`;
-    
-    setupSidebar(profile.role);
-    document.getElementById('loading-screen').classList.add('hidden');
-    showDashboard(profile.role, profile);
+    displayDashboard(userProfile);
     
   } catch (error) {
-    console.error('Error loading profile:', error);
-    showError('فشل تحميل الملف الشخصي. حاول مرة أخرى.');
+    console.error('Error loading profile from Firestore:', error);
+    
+    try {
+      await loadUserProfileFromBackend();
+    } catch (backendError) {
+      console.error('Backend fallback also failed:', backendError);
+      showProfileSetupMessage();
+    }
+  }
+}
+
+/**
+ * Fallback: Load user profile from backend API
+ */
+async function loadUserProfileFromBackend() {
+  const profile = await apiRequest('/api/auth/profile');
+  
+  if (!profile || !profile.role) {
+    showProfileSetupMessage();
+    return;
+  }
+  
+  currentRole = profile.role;
+  userProfile = {
+    uid: currentUser.uid,
+    email: currentUser.email,
+    fullName: profile.fullName || currentUser.displayName || 'مستخدم',
+    role: profile.role,
+    status: profile.status || 'approved',
+    ...profile
+  };
+  
+  displayDashboard(userProfile);
+}
+
+/**
+ * Show profile setup message instead of logging out
+ */
+function showProfileSetupMessage() {
+  document.getElementById('loading-screen').classList.add('hidden');
+  
+  const mainContent = document.querySelector('.dashboard-main');
+  if (mainContent) {
+    mainContent.innerHTML = `
+      <div class="dashboard-section" style="text-align: center; padding: 3rem;">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">👤</div>
+        <h3 style="margin-bottom: 1rem; color: var(--primary-color);">مرحباً بك في رعاية!</h3>
+        <p style="margin-bottom: 1.5rem; color: var(--text-light);">
+          يبدو أن ملفك الشخصي غير مكتمل أو لم يتم إنشاؤه بعد.
+          <br>
+          يرجى التواصل مع المشرف أو إعادة التسجيل.
+        </p>
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+          <a href="/register" class="btn btn-primary">إنشاء حساب جديد</a>
+          <button onclick="handleLogout()" class="btn btn-outline">تسجيل الخروج</button>
+        </div>
+      </div>
+    `;
+  }
+  
+  document.getElementById('user-info').textContent = `مرحباً، ${currentUser.displayName || currentUser.email}`;
+  document.getElementById('role-title').textContent = 'إعداد الحساب';
+  document.getElementById('status-badge').classList.add('hidden');
+}
+
+/**
+ * Display the dashboard with loaded profile
+ */
+function displayDashboard(profile) {
+  document.getElementById('user-info').textContent = `مرحباً، ${profile.fullName}`;
+  document.getElementById('role-title').textContent = getRoleTitle(profile.role);
+  
+  const statusBadge = document.getElementById('status-badge');
+  statusBadge.textContent = getStatusText(profile.status);
+  statusBadge.className = `status-badge status-${profile.status || 'approved'}`;
+  
+  setupSidebar(profile.role);
+  document.getElementById('loading-screen').classList.add('hidden');
+  showDashboard(profile.role, profile);
+}
+
+/**
+ * Show error message
+ */
+function showError(message, force = false) {
+  if (!authStateResolved && !force) {
+    return;
+  }
+  
+  document.getElementById('loading-screen').classList.add('hidden');
+  
+  const mainContent = document.querySelector('.dashboard-main');
+  if (mainContent) {
+    mainContent.innerHTML = `
+      <div class="dashboard-section" style="text-align: center; padding: 3rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+        <h3 style="margin-bottom: 1rem; color: var(--danger-color);">حدث خطأ</h3>
+        <p style="margin-bottom: 1.5rem; color: var(--text-light);">${message}</p>
+        <div style="display: flex; gap: 1rem; justify-content: center;">
+          <button onclick="location.reload()" class="btn btn-primary">تحديث الصفحة</button>
+          <a href="/" class="btn btn-outline">العودة للرئيسية</a>
+        </div>
+      </div>
+    `;
   }
 }
 
@@ -115,32 +235,32 @@ function setupSidebar(role) {
   switch (role) {
     case 'admin':
       navItems.push(
-        { href: '#overview', text: 'نظرة عامة', icon: '&#128200;' },
-        { href: '#users', text: 'إدارة المستخدمين', icon: '&#128101;' },
-        { href: '#requests', text: 'جميع الطلبات', icon: '&#128203;' },
-        { href: '#stats', text: 'الإحصائيات', icon: '&#128202;' }
+        { href: '#overview', text: 'نظرة عامة', icon: '📊' },
+        { href: '#users', text: 'إدارة المستخدمين', icon: '👥' },
+        { href: '#requests', text: 'جميع الطلبات', icon: '📋' },
+        { href: '#stats', text: 'الإحصائيات', icon: '📈' }
       );
       break;
     case 'volunteer':
       navItems.push(
-        { href: '#available', text: 'الطلبات المتاحة', icon: '&#128214;' },
-        { href: '#my-requests', text: 'طلباتي', icon: '&#128203;' },
-        { href: '#hours', text: 'تسجيل الساعات', icon: '&#128337;' },
-        { href: '#profile', text: 'ملفي الشخصي', icon: '&#128100;' }
+        { href: '#available', text: 'الطلبات المتاحة', icon: '📖' },
+        { href: '#my-requests', text: 'طلباتي', icon: '📋' },
+        { href: '#hours', text: 'تسجيل الساعات', icon: '⏰' },
+        { href: '#profile', text: 'ملفي الشخصي', icon: '👤' }
       );
       break;
     case 'elderly':
       navItems.push(
-        { href: '#request-help', text: 'اطلب المساعدة', icon: '&#128400;' },
-        { href: '#my-requests', text: 'طلباتي', icon: '&#128203;' },
-        { href: '#profile', text: 'ملفي الشخصي', icon: '&#128100;' }
+        { href: '#request-help', text: 'اطلب المساعدة', icon: '🙏' },
+        { href: '#my-requests', text: 'طلباتي', icon: '📋' },
+        { href: '#profile', text: 'ملفي الشخصي', icon: '👤' }
       );
       break;
     case 'organization':
       navItems.push(
-        { href: '#overview', text: 'نظرة عامة', icon: '&#127970;' },
-        { href: '#volunteers', text: 'المتطوعون', icon: '&#128101;' },
-        { href: '#profile', text: 'ملف المنظمة', icon: '&#128100;' }
+        { href: '#overview', text: 'نظرة عامة', icon: '🏢' },
+        { href: '#volunteers', text: 'المتطوعون', icon: '👥' },
+        { href: '#profile', text: 'ملف المنظمة', icon: '👤' }
       );
       break;
   }
@@ -197,15 +317,12 @@ async function loadAdminDashboard() {
     
   } catch (error) {
     console.error('Error loading admin dashboard:', error);
-    document.getElementById('stat-total-users').textContent = '٢٥';
-    document.getElementById('stat-pending').textContent = '٥';
-    document.getElementById('stat-volunteers').textContent = '١٠';
-    document.getElementById('stat-requests').textContent = '٤٥';
+    document.getElementById('stat-total-users').textContent = '٠';
+    document.getElementById('stat-pending').textContent = '٠';
+    document.getElementById('stat-volunteers').textContent = '٠';
+    document.getElementById('stat-requests').textContent = '٠';
     
-    displayPendingUsers([
-      { uid: '1', fullName: 'أحمد متطوع', email: 'ahmad@test.com', role: 'volunteer' },
-      { uid: '2', fullName: 'جمعية الرعاية', email: 'care@charity.org', role: 'organization' }
-    ]);
+    displayPendingUsers([]);
   }
 }
 
@@ -253,10 +370,10 @@ function getRoleArabic(role) {
 async function approveUser(userId) {
   try {
     await apiRequest(`/api/admin/users/${userId}/approve`, { method: 'PUT' });
-    alert('تمت الموافقة على المستخدم بنجاح!');
+    showToast('تمت الموافقة على المستخدم بنجاح!', 'success');
     loadAdminDashboard();
   } catch (error) {
-    alert('فشلت الموافقة: ' + error.message);
+    showToast('فشلت الموافقة: ' + error.message, 'error');
   }
 }
 
@@ -270,10 +387,10 @@ async function rejectUser(userId) {
       method: 'PUT',
       body: JSON.stringify({ reason })
     });
-    alert('تم رفض المستخدم.');
+    showToast('تم رفض المستخدم.', 'success');
     loadAdminDashboard();
   } catch (error) {
-    alert('فشل الرفض: ' + error.message);
+    showToast('فشل الرفض: ' + error.message, 'error');
   }
 }
 
@@ -282,7 +399,7 @@ async function rejectUser(userId) {
  */
 async function loadVolunteerDashboard(profile) {
   if (profile.status === 'pending') {
-    document.getElementById('pending-approval-notice').classList.remove('hidden');
+    document.getElementById('pending-approval-notice')?.classList.remove('hidden');
   }
   
   document.getElementById('vol-total-hours').textContent = profile.totalHours || '٠';
@@ -295,10 +412,7 @@ async function loadVolunteerDashboard(profile) {
     displayAvailableRequests(requestsData.requests || []);
   } catch (error) {
     console.error('Error loading requests:', error);
-    displayAvailableRequests([
-      { id: '1', type: 'shopping', description: 'تسوق البقالة الأسبوعي', urgency: 'medium', elderlyName: 'أم محمد' },
-      { id: '2', type: 'hospital', description: 'موعد طبيب', urgency: 'high', elderlyName: 'أبو سالم' }
-    ]);
+    displayAvailableRequests([]);
   }
   
   try {
@@ -306,6 +420,7 @@ async function loadVolunteerDashboard(profile) {
     displayMyActiveRequests(myRequestsData.requests || []);
   } catch (error) {
     console.error('Error loading my requests:', error);
+    displayMyActiveRequests([]);
   }
 }
 
@@ -374,10 +489,10 @@ function displayMyActiveRequests(requests) {
 async function acceptRequest(requestId) {
   try {
     await apiRequest(`/api/volunteer/requests/${requestId}/accept`, { method: 'POST' });
-    alert('تم قبول الطلب! ستتم مشاركة تفاصيل التواصل.');
-    loadVolunteerDashboard(currentUser);
+    showToast('تم قبول الطلب! ستتم مشاركة تفاصيل التواصل.', 'success');
+    loadVolunteerDashboard(userProfile);
   } catch (error) {
-    alert('فشل قبول الطلب: ' + error.message);
+    showToast('فشل قبول الطلب: ' + error.message, 'error');
   }
 }
 
@@ -393,10 +508,10 @@ async function completeRequest(requestId) {
       method: 'POST',
       body: JSON.stringify({ hoursSpent: parseFloat(hours), notes: '' })
     });
-    alert('تم إتمام الطلب. شكراً لتطوعك!');
-    loadVolunteerDashboard(currentUser);
+    showToast('تم إتمام الطلب. شكراً لتطوعك!', 'success');
+    loadVolunteerDashboard(userProfile);
   } catch (error) {
-    alert('فشل إتمام الطلب: ' + error.message);
+    showToast('فشل إتمام الطلب: ' + error.message, 'error');
   }
 }
 
@@ -409,10 +524,7 @@ async function loadElderlyDashboard() {
     displayElderlyRequests(requestsData.requests || []);
   } catch (error) {
     console.error('Error loading requests:', error);
-    displayElderlyRequests([
-      { id: '1', type: 'shopping', description: 'تسوق أسبوعي', status: 'pending', createdAt: new Date().toISOString() },
-      { id: '2', type: 'hospital', description: 'فحص طبي', status: 'completed', volunteerName: 'أحمد س.', createdAt: new Date().toISOString() }
-    ]);
+    displayElderlyRequests([]);
   }
 }
 
@@ -492,11 +604,11 @@ async function handleCreateRequest(e) {
       body: JSON.stringify(data)
     });
     
-    alert('تم إرسال طلب المساعدة بنجاح!');
+    showToast('تم إرسال طلب المساعدة بنجاح!', 'success');
     closeModal();
     loadElderlyDashboard();
   } catch (error) {
-    alert('فشل إرسال الطلب: ' + error.message);
+    showToast('فشل إرسال الطلب: ' + error.message, 'error');
   }
 }
 
@@ -506,7 +618,7 @@ async function handleCreateRequest(e) {
 async function rateVolunteer(requestId) {
   const rating = prompt('قيّم المتطوع (١-٥ نجوم):');
   if (!rating || rating < 1 || rating > 5) {
-    alert('يرجى إدخال تقييم صحيح بين ١ و ٥');
+    showToast('يرجى إدخال تقييم صحيح بين ١ و ٥', 'error');
     return;
   }
   
@@ -517,10 +629,10 @@ async function rateVolunteer(requestId) {
       method: 'POST',
       body: JSON.stringify({ rating: parseInt(rating), feedback: feedback || '' })
     });
-    alert('شكراً على تقييمك!');
+    showToast('شكراً على تقييمك!', 'success');
     loadElderlyDashboard();
   } catch (error) {
-    alert('فشل إرسال التقييم: ' + error.message);
+    showToast('فشل إرسال التقييم: ' + error.message, 'error');
   }
 }
 
@@ -532,10 +644,10 @@ async function cancelRequest(requestId) {
   
   try {
     await apiRequest(`/api/elderly/requests/${requestId}`, { method: 'DELETE' });
-    alert('تم إلغاء الطلب.');
+    showToast('تم إلغاء الطلب.', 'success');
     loadElderlyDashboard();
   } catch (error) {
-    alert('فشل إلغاء الطلب: ' + error.message);
+    showToast('فشل إلغاء الطلب: ' + error.message, 'error');
   }
 }
 
@@ -544,7 +656,7 @@ async function cancelRequest(requestId) {
  */
 async function loadOrganizationDashboard(profile) {
   if (profile.status === 'pending') {
-    document.getElementById('org-pending-notice').classList.remove('hidden');
+    document.getElementById('org-pending-notice')?.classList.remove('hidden');
   }
   
   document.getElementById('org-name').value = profile.organizationName || '';
@@ -558,6 +670,7 @@ async function loadOrganizationDashboard(profile) {
   } catch (error) {
     console.error('Error loading volunteers:', error);
     document.getElementById('org-verified').textContent = '٠';
+    displayOrgVolunteers([]);
   }
   
   try {
@@ -610,9 +723,9 @@ async function handleUpdateOrgProfile(e) {
       method: 'PUT',
       body: JSON.stringify(data)
     });
-    alert('تم تحديث الملف بنجاح!');
+    showToast('تم تحديث الملف بنجاح!', 'success');
   } catch (error) {
-    alert('فشل تحديث الملف: ' + error.message);
+    showToast('فشل تحديث الملف: ' + error.message, 'error');
   }
 }
 
@@ -624,10 +737,10 @@ async function removeVerification(volunteerId) {
   
   try {
     await apiRequest(`/api/organization/volunteers/${volunteerId}`, { method: 'DELETE' });
-    alert('تم إزالة الاعتماد.');
-    loadOrganizationDashboard(currentUser);
+    showToast('تم إزالة الاعتماد.', 'success');
+    loadOrganizationDashboard(userProfile);
   } catch (error) {
-    alert('فشلت الإزالة: ' + error.message);
+    showToast('فشلت الإزالة: ' + error.message, 'error');
   }
 }
 
@@ -647,7 +760,7 @@ async function handleLogout() {
     window.location.href = '/';
   } catch (error) {
     console.error('Logout error:', error);
-    alert('فشل تسجيل الخروج. حاول مرة أخرى.');
+    showToast('فشل تسجيل الخروج. حاول مرة أخرى.', 'error');
   }
 }
 
@@ -683,7 +796,7 @@ function formatUrgency(urgency) {
 function formatStatus(status) {
   const statuses = {
     pending: 'في الانتظار',
-    assigned: 'تم تعيين متطوع',
+    assigned: 'قيد التنفيذ',
     completed: 'مكتمل',
     cancelled: 'ملغي'
   };
@@ -698,19 +811,21 @@ function formatDate(dateString) {
   try {
     return new Date(dateString).toLocaleDateString('ar-SA', {
       year: 'numeric',
-      month: 'short',
+      month: 'long',
       day: 'numeric'
     });
-  } catch {
+  } catch (e) {
     return dateString;
   }
 }
 
 /**
- * Show error message - عرض رسالة خطأ
+ * Show toast notification
  */
-function showError(message) {
-  document.getElementById('loading-screen').innerHTML = `
-    <div class="alert alert-error">${message}</div>
-  `;
+function showToast(message, type = 'info') {
+  if (typeof window.showToast === 'function') {
+    window.showToast(message, type);
+  } else {
+    alert(message);
+  }
 }

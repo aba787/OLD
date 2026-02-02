@@ -81,22 +81,28 @@ function formatCurrency(amount) {
 /**
  * Utility: Show toast notification - عرض إشعار
  */
-function showToast(message, type = 'info') {
+window.showToast = function(message, type = 'info') {
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
   toast.textContent = message;
+  
+  const bgColor = type === 'error' ? '#ef5350' : type === 'success' ? '#66bb6a' : '#5a9cb5';
+  
   toast.style.cssText = `
     position: fixed;
-    bottom: 20px;
-    left: 20px;
+    bottom: 24px;
+    left: 24px;
     padding: 1rem 1.5rem;
-    border-radius: 8px;
+    border-radius: 10px;
     color: white;
-    background: ${type === 'error' ? '#e74c3c' : type === 'success' ? '#27ae60' : '#4a90a4'};
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 1000;
+    background: ${bgColor};
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    z-index: 10000;
     animation: slideInRTL 0.3s ease;
-    font-family: 'Segoe UI', Tahoma, 'Cairo', 'Noto Sans Arabic', sans-serif;
+    font-family: 'Cairo', 'Tajawal', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    max-width: 90vw;
   `;
   
   document.body.appendChild(toast);
@@ -104,7 +110,7 @@ function showToast(message, type = 'info') {
   setTimeout(() => {
     toast.style.animation = 'slideOutRTL 0.3s ease';
     setTimeout(() => toast.remove(), 300);
-  }, 3000);
+  }, 4000);
 }
 
 // Add toast animations for RTL

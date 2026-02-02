@@ -4,24 +4,31 @@
  * CareConnect - Main Stylesheet
  */
 
-/* CSS Variables for consistent theming */
+/* Google Fonts - Modern Arabic Typography */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&family=Tajawal:wght@300;400;500;700&display=swap');
+
+/* CSS Variables for consistent theming - Soft, calm color palette */
 :root {
-  --primary-color: #4a90a4;
-  --primary-dark: #3a7a8f;
-  --secondary-color: #7cb342;
-  --accent-color: #ff9800;
-  --danger-color: #e74c3c;
-  --success-color: #27ae60;
-  --warning-color: #f39c12;
-  --text-color: #333;
-  --text-light: #666;
-  --bg-color: #f5f7fa;
+  --primary-color: #5a9cb5;
+  --primary-dark: #4a8ca5;
+  --primary-light: #e8f4f8;
+  --secondary-color: #8bc34a;
+  --accent-color: #ffb74d;
+  --danger-color: #ef5350;
+  --success-color: #66bb6a;
+  --warning-color: #ffa726;
+  --text-color: #2c3e50;
+  --text-light: #607d8b;
+  --text-muted: #90a4ae;
+  --bg-color: #f8fafb;
+  --bg-alt: #f0f4f7;
   --white: #ffffff;
-  --border-color: #ddd;
-  --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.15);
-  --radius: 8px;
-  --radius-lg: 12px;
+  --border-color: #e0e6ed;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --radius: 10px;
+  --radius-lg: 16px;
+  --transition: 0.2s ease;
 }
 
 /* Reset and Base Styles */
@@ -32,10 +39,13 @@
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, 'Cairo', 'Noto Sans Arabic', sans-serif;
+  font-family: 'Cairo', 'Tajawal', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--bg-color);
   color: var(--text-color);
-  line-height: 1.8;
+  line-height: 1.9;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* RTL Support - دعم اللغة العربية */
@@ -121,30 +131,36 @@ html[dir="rtl"] .action-btn {
 /* Elderly-friendly enhancements - تحسينات صديقة لكبار السن */
 .btn {
   font-size: 1.1rem;
+  font-weight: 500;
 }
 
 .btn-large {
-  font-size: 1.25rem;
-  padding: 1.2rem 2.5rem;
+  font-size: 1.2rem;
+  padding: 1.1rem 2.2rem;
 }
 
 .form-group label {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 0.6rem;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
   font-size: 1.1rem;
-  padding: 1rem 1.25rem;
+  padding: 0.9rem 1.1rem;
+  font-family: inherit;
 }
 
 .action-btn {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
 }
 
 .stat-value {
-  font-size: 2.5rem;
+  font-size: 2.2rem;
+  font-weight: 700;
 }
 
 /* Better focus states for accessibility - حالات التركيز للوصولية */
@@ -152,18 +168,21 @@ html[dir="rtl"] .action-btn {
 input:focus,
 select:focus,
 textarea:focus {
-  outline: 3px solid var(--primary-color);
+  outline: 3px solid var(--primary-light);
   outline-offset: 2px;
+  border-color: var(--primary-color);
 }
 
 /* High contrast for readability - تباين عالي للقراءة */
 .form-group label {
   font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .auth-card h2,
 .dashboard-section h3 {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
+  font-weight: 600;
 }
 
 a {
@@ -186,11 +205,13 @@ a:hover {
   position: sticky;
   top: 0;
   z-index: 100;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .nav-brand h1 {
   color: var(--primary-color);
-  font-size: 1.5rem;
+  font-size: 1.6rem;
+  font-weight: 700;
 }
 
 .nav-brand a {
@@ -199,26 +220,29 @@ a:hover {
 
 .nav-links {
   display: flex;
-  gap: 1rem;
+  gap: 0.8rem;
   align-items: center;
 }
 
 .user-info {
   color: var(--text-light);
   margin-right: 1rem;
+  font-weight: 500;
 }
 
 /* Buttons */
 .btn {
   display: inline-block;
-  padding: 0.75rem 1.5rem;
+  padding: 0.8rem 1.6rem;
   border-radius: var(--radius);
   border: none;
   cursor: pointer;
   font-size: 1rem;
   font-weight: 500;
-  transition: all 0.3s ease;
+  font-family: inherit;
+  transition: all var(--transition);
   text-align: center;
+  text-decoration: none;
 }
 
 .btn-primary {
@@ -229,6 +253,7 @@ a:hover {
 .btn-primary:hover {
   background: var(--primary-dark);
   text-decoration: none;
+  transform: translateY(-1px);
 }
 
 .btn-outline {
@@ -238,8 +263,7 @@ a:hover {
 }
 
 .btn-outline:hover {
-  background: var(--primary-color);
-  color: var(--white);
+  background: var(--primary-light);
   text-decoration: none;
 }
 
@@ -248,9 +272,17 @@ a:hover {
   color: var(--white);
 }
 
+.btn-danger:hover {
+  opacity: 0.9;
+}
+
 .btn-success {
   background: var(--success-color);
   color: var(--white);
+}
+
+.btn-success:hover {
+  opacity: 0.9;
 }
 
 .btn-full {
@@ -263,51 +295,57 @@ a:hover {
 }
 
 .btn-small {
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.95rem;
 }
 
 /* Hero Section */
 .hero {
-  padding: 4rem 2rem;
+  padding: 4.5rem 2rem;
   text-align: center;
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(145deg, var(--primary-color) 0%, var(--primary-dark) 100%);
   color: var(--white);
 }
 
 .hero-content h2 {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
+  font-size: 2.4rem;
+  margin-bottom: 1.2rem;
+  font-weight: 700;
 }
 
 .hero-content > p {
-  font-size: 1.2rem;
-  margin-bottom: 3rem;
-  opacity: 0.9;
+  font-size: 1.15rem;
+  margin-bottom: 2.5rem;
+  opacity: 0.95;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .hero-features {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
-  max-width: 1200px;
-  margin: 0 auto 3rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+  max-width: 1100px;
+  margin: 0 auto 2.5rem;
 }
 
 .feature-card {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 2rem;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 1.8rem;
   border-radius: var(--radius-lg);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .feature-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
+  font-size: 2.8rem;
+  margin-bottom: 0.8rem;
 }
 
 .feature-card h3 {
   margin-bottom: 0.5rem;
+  font-weight: 600;
 }
 
 .cta-buttons {
@@ -409,57 +447,65 @@ a:hover {
   align-items: center;
   justify-content: center;
   padding: 2rem;
+  background: var(--bg-alt);
 }
 
 .auth-card {
   background: var(--white);
   padding: 2.5rem;
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow);
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
+  border: 1px solid var(--border-color);
 }
 
 .auth-card-wide {
-  max-width: 600px;
+  max-width: 580px;
 }
 
 .auth-card h2 {
   text-align: center;
   color: var(--primary-color);
   margin-bottom: 0.5rem;
+  font-weight: 700;
 }
 
 .auth-subtitle {
   text-align: center;
   color: var(--text-light);
   margin-bottom: 2rem;
+  font-size: 1rem;
 }
 
 .auth-footer {
   text-align: center;
-  margin-top: 1.5rem;
+  margin-top: 1.8rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--border-color);
+  color: var(--text-light);
 }
 
 .auth-note {
   margin-top: 1.5rem;
-  padding: 1rem;
-  background: #fff3cd;
+  padding: 1rem 1.2rem;
+  background: var(--primary-light);
   border-radius: var(--radius);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  color: var(--primary-dark);
+  border: 1px solid var(--primary-color);
+  border-opacity: 0.2;
 }
 
 /* Forms */
 .form-group {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.4rem;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
+  margin-bottom: 0.6rem;
+  font-weight: 600;
   color: var(--text-color);
 }
 
@@ -467,11 +513,13 @@ a:hover {
 .form-group select,
 .form-group textarea {
   width: 100%;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--border-color);
+  padding: 0.85rem 1rem;
+  border: 1.5px solid var(--border-color);
   border-radius: var(--radius);
   font-size: 1rem;
-  transition: border-color 0.3s ease;
+  font-family: inherit;
+  transition: all var(--transition);
+  background: var(--white);
 }
 
 .form-group input:focus,
@@ -479,6 +527,12 @@ a:hover {
 .form-group textarea:focus {
   outline: none;
   border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--text-muted);
 }
 
 .form-row {
@@ -497,7 +551,7 @@ a:hover {
 .role-selector {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+  gap: 0.8rem;
 }
 
 @media (max-width: 600px) {
@@ -514,32 +568,41 @@ a:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1.25rem;
+  padding: 1.2rem 1rem;
   border: 2px solid var(--border-color);
   border-radius: var(--radius);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--transition);
   text-align: center;
+  background: var(--white);
+}
+
+.role-card:hover {
+  border-color: var(--primary-color);
+  background: var(--primary-light);
 }
 
 .role-option input:checked + .role-card {
   border-color: var(--primary-color);
-  background: rgba(74, 144, 164, 0.05);
+  background: var(--primary-light);
+  box-shadow: 0 0 0 3px rgba(90, 156, 181, 0.15);
 }
 
 .role-icon {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
+  font-size: 1.8rem;
+  margin-bottom: 0.4rem;
 }
 
 .role-name {
   font-weight: 600;
   color: var(--text-color);
+  font-size: 0.95rem;
 }
 
 .role-desc {
   font-size: 0.8rem;
   color: var(--text-light);
+  margin-top: 0.2rem;
 }
 
 /* Checkbox */
@@ -648,8 +711,8 @@ a:hover {
 /* Stats Grid */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.2rem;
   margin-bottom: 2rem;
 }
 
@@ -659,17 +722,19 @@ a:hover {
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   text-align: center;
+  border: 1px solid var(--border-color);
 }
 
 .stat-card h3 {
   color: var(--text-light);
   font-size: 0.9rem;
   margin-bottom: 0.5rem;
+  font-weight: 500;
 }
 
 .stat-value {
   font-size: 2rem;
-  font-weight: bold;
+  font-weight: 700;
   color: var(--primary-color);
 }
 
@@ -680,12 +745,15 @@ a:hover {
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   margin-bottom: 1.5rem;
+  border: 1px solid var(--border-color);
 }
 
 .dashboard-section h3 {
   margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+  color: var(--text-color);
 }
 
 /* User List */
