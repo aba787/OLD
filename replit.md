@@ -163,6 +163,13 @@ The server will start on port 5000.
   - Role selection screen for users without profile (instead of error)
   - Backend updated to create both main user doc and role profile
   - Firestore SDK added to login and register pages
+- **February 2026**: Sidebar Navigation & Help Requests Fix
+  - Fixed Firestore rules: changed collection name from help_requests to requests
+  - Added sidebar navigation with navigateToSection() for all roles
+  - Elderly dashboard: show/hide sections (quick actions, requests, profile)
+  - Other roles: smooth scroll to sections
+  - Added elderly profile section with handleUpdateElderlyProfile()
+  - Added loadElderlyProfile() to populate form with existing data
 
 ## Notes
 - The application runs in demo mode if Firebase is not configured
