@@ -256,44 +256,149 @@ function showRoleSelectionScreen(user) {
 }
 
 /**
- * Complete profile setup
+ * Complete profile setup - Tries backend API first, then client-side Firestore
  */
 async function completeProfileSetup(user, role) {
+  const btn = document.getElementById('complete-setup-btn');
+  const originalText = btn ? btn.textContent : '';
+  
   try {
-    const db = firebase.firestore();
-    const now = new Date().toISOString();
-    const status = role === 'elderly' ? 'approved' : 'pending';
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'جارٍ الإعداد...';
+    }
     
-    const userData = {
-      uid: user.uid,
+    const profileData = {
       email: user.email,
       fullName: user.displayName || 'مستخدم',
       phone: '',
       address: '',
-      role,
-      status,
-      createdAt: now,
-      updatedAt: now
+      role
     };
     
     if (role === 'organization') {
-      userData.organizationId = user.uid;
+      profileData.organizationName = user.displayName || 'منظمة';
+      profileData.registrationNumber = '';
     }
     
-    await db.collection('users').doc(user.uid).set(userData);
-    console.log('Created users/' + user.uid);
+    let success = false;
     
-    await createRoleProfile(db, user, userData);
+    // Try backend API first
+    try {
+      await apiRequest('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(profileData)
+      });
+      console.log('Profile created via backend API');
+      success = true;
+    } catch (apiError) {
+      console.warn('Backend API failed, trying client-side Firestore:', apiError.message);
+      
+      // Fallback to client-side Firestore
+      if (typeof firebase !== 'undefined' && firebase.firestore) {
+        const db = firebase.firestore();
+        const now = new Date().toISOString();
+        const status = role === 'elderly' ? 'approved' : 'pending';
+        
+        const userData = {
+          uid: user.uid,
+          email: user.email,
+          fullName: user.displayName || 'مستخدم',
+          phone: '',
+          address: '',
+          role,
+          status,
+          createdAt: now,
+          updatedAt: now
+        };
+        
+        if (role === 'organization') {
+          userData.organizationId = user.uid;
+        }
+        
+        // Write to users collection
+        await db.collection('users').doc(user.uid).set(userData);
+        console.log('Created users/' + user.uid + ' via client-side Firestore');
+        
+        // Create role-specific profile
+        await createRoleProfileDirect(db, user.uid, role, userData);
+        success = true;
+      }
+    }
     
-    showToast('تم إنشاء الحساب بنجاح!', 'success');
-    
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
+    if (success) {
+      showToast('تم إنشاء الحساب بنجاح!', 'success');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } else {
+      throw new Error('Could not create profile');
+    }
     
   } catch (error) {
     console.error('Error completing profile setup:', error);
+    
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+    
     showToast('حدث خطأ أثناء إعداد الحساب. يرجى المحاولة مرة أخرى.', 'error');
+  }
+}
+
+/**
+ * Create role-specific profile directly in Firestore
+ */
+async function createRoleProfileDirect(db, uid, role, userData) {
+  const now = new Date().toISOString();
+  
+  if (role === 'elderly') {
+    await db.collection('elder_profiles').doc(uid).set({
+      uid,
+      fullName: userData.fullName || '',
+      phone: userData.phone || '',
+      address: userData.address || '',
+      emergencyContact: '',
+      specialNeeds: '',
+      createdAt: now,
+      updatedAt: now
+    });
+    console.log('Created elder_profiles/' + uid);
+  } else if (role === 'volunteer') {
+    await db.collection('volunteer_profiles').doc(uid).set({
+      uid,
+      fullName: userData.fullName || '',
+      phone: userData.phone || '',
+      address: userData.address || '',
+      skills: [],
+      availability: {},
+      bio: '',
+      totalHours: 0,
+      completedRequests: 0,
+      rating: 0,
+      ratingCount: 0,
+      verified: false,
+      verifiedBy: null,
+      createdAt: now,
+      updatedAt: now
+    });
+    console.log('Created volunteer_profiles/' + uid);
+  } else if (role === 'organization') {
+    await db.collection('organizations').doc(uid).set({
+      uid,
+      organizationName: userData.organizationName || userData.fullName || '',
+      registrationNumber: '',
+      email: userData.email,
+      phone: userData.phone || '',
+      address: userData.address || '',
+      description: '',
+      website: '',
+      verifiedVolunteers: [],
+      createdAt: now,
+      updatedAt: now
+    });
+    console.log('Created organizations/' + uid);
   }
 }
 

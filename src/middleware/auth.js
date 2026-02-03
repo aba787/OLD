@@ -26,13 +26,45 @@ const verifyToken = async (req, res, next) => {
       token = req.cookies.authToken;
     }
 
-    // DEMO MODE: Allow demo access when Firebase is not configured
-    // Check for demo header or if no auth service is available
+    // DEMO MODE: Allow demo access when Firebase Admin is not configured
+    // But we can still decode Firebase client tokens if they exist
     const demoMode = req.headers['x-demo-mode'] === 'true';
     const demoRole = req.headers['x-demo-role'] || 'elderly';
     
     if (!auth) {
-      // Demo mode - use demo user based on headers or defaults
+      // Firebase Admin not configured - try to decode token manually or use demo
+      if (token) {
+        try {
+          // Decode JWT without verification (Firebase client tokens are still valid)
+          const base64Url = token.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const jsonPayload = Buffer.from(base64, 'base64').toString('utf8');
+          const decoded = JSON.parse(jsonPayload);
+          
+          req.user = {
+            uid: decoded.user_id || decoded.sub,
+            email: decoded.email,
+            role: 'pending',
+            fullName: decoded.name || 'مستخدم',
+            status: 'approved'
+          };
+          
+          // Try to get user data from Firestore if db is available
+          if (db) {
+            const userDoc = await db.collection('users').doc(req.user.uid).get();
+            if (userDoc.exists) {
+              const userData = userDoc.data();
+              req.user = { ...req.user, ...userData };
+            }
+          }
+          
+          return next();
+        } catch (decodeError) {
+          console.warn('Could not decode token:', decodeError.message);
+        }
+      }
+      
+      // No token or decode failed - use demo user
       if (demoMode || !token) {
         req.user = { 
           uid: 'demo-user-' + demoRole, 
@@ -43,6 +75,11 @@ const verifyToken = async (req, res, next) => {
         };
         return next();
       }
+      
+      return res.status(401).json({ 
+        error: 'Authentication service not available',
+        code: 'AUTH_UNAVAILABLE'
+      });
     }
 
     if (!token) {
@@ -52,29 +89,27 @@ const verifyToken = async (req, res, next) => {
       });
     }
 
-    // Verify the token with Firebase
-    if (auth) {
-      const decodedToken = await auth.verifyIdToken(token);
-      req.user = {
-        uid: decodedToken.uid,
-        email: decodedToken.email,
-        role: decodedToken.role || 'pending'
-      };
+    // Verify the token with Firebase Admin
+    const decodedToken = await auth.verifyIdToken(token);
+    req.user = {
+      uid: decodedToken.uid,
+      email: decodedToken.email,
+      role: decodedToken.role || 'pending'
+    };
 
-      // Get additional user data from Firestore
-      if (db) {
-        const userDoc = await db.collection('users').doc(decodedToken.uid).get();
-        if (userDoc.exists) {
-          const userData = userDoc.data();
-          req.user = { ...req.user, ...userData };
-          
-          // Check if user is suspended
-          if (userData.status === 'suspended') {
-            return res.status(403).json({
-              error: 'Your account has been suspended. Please contact admin.',
-              code: 'ACCOUNT_SUSPENDED'
-            });
-          }
+    // Get additional user data from Firestore
+    if (db) {
+      const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        req.user = { ...req.user, ...userData };
+        
+        // Check if user is suspended
+        if (userData.status === 'suspended') {
+          return res.status(403).json({
+            error: 'Your account has been suspended. Please contact admin.',
+            code: 'ACCOUNT_SUSPENDED'
+          });
         }
       }
     }

@@ -109,6 +109,15 @@ To enable full functionality, configure Firebase:
 4. Add your web app configuration to `public/js/firebase-config.js`
 5. For server-side operations, add Firebase service account credentials as `FIREBASE_SERVICE_ACCOUNT` environment variable
 
+### CRITICAL: Firestore Security Rules
+You MUST deploy the Firestore security rules to allow user profile creation:
+
+1. Go to Firebase Console > Firestore Database > Rules
+2. Copy the contents of `firestore.rules` file from this project
+3. Click "Publish" to deploy the rules
+
+Without these rules, users cannot create their profiles and will see "Error occurred while setting up the account".
+
 ## Environment Variables
 - `PORT` - Server port (default: 5000)
 - `FIREBASE_PROJECT_ID` - Firebase project ID
