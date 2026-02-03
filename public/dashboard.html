@@ -128,6 +128,21 @@
           </div>
         </div>
 
+        <!-- Volunteer Verification & Organization Info -->
+        <section class="dashboard-section" id="volunteer-verification-section">
+          <h3>حالة التحقق والاعتماد</h3>
+          <div id="volunteer-verification-info" class="verification-card">
+            <div class="verification-status">
+              <span id="vol-verified-badge"></span>
+            </div>
+            <div id="vol-organization-info" class="organization-info hidden">
+              <p><strong>المنظمة المعتمِدة:</strong> <span id="vol-org-name">-</span></p>
+              <p><strong>تاريخ الاعتماد:</strong> <span id="vol-verified-date">-</span></p>
+            </div>
+            <p class="verification-note" id="vol-not-verified-note">لم يتم اعتمادك من منظمة بعد. تواصل مع جمعية خيرية للتحقق من هويتك.</p>
+          </div>
+        </section>
+
         <section class="dashboard-section">
           <h3>طلبات المساعدة المتاحة</h3>
           <div id="available-requests" class="request-list">
@@ -140,6 +155,38 @@
           <div id="my-active-requests" class="request-list">
             <p class="empty-state">لا توجد طلبات نشطة</p>
           </div>
+        </section>
+
+        <!-- Volunteer Profile Section -->
+        <section class="dashboard-section hidden" id="volunteer-profile-section">
+          <h3>ملفي الشخصي</h3>
+          <form id="volunteer-profile-form" class="profile-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="vol-name">الاسم الكامل</label>
+                <input type="text" id="vol-name" name="fullName">
+              </div>
+              <div class="form-group">
+                <label for="vol-phone">رقم الهاتف</label>
+                <input type="tel" id="vol-phone" name="phone">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="vol-bio">نبذة عني</label>
+              <textarea id="vol-bio" name="bio" rows="3" placeholder="أخبرنا عن نفسك وتجربتك في التطوع..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>المهارات</label>
+              <div class="skills-checkboxes">
+                <label><input type="checkbox" name="skills" value="shopping"> التسوق</label>
+                <label><input type="checkbox" name="skills" value="hospital"> المرافقة للمستشفى</label>
+                <label><input type="checkbox" name="skills" value="paperwork"> الأوراق الرسمية</label>
+                <label><input type="checkbox" name="skills" value="companionship"> الرفقة والدعم</label>
+                <label><input type="checkbox" name="skills" value="transportation"> النقل والمواصلات</label>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+          </form>
         </section>
       </div>
 
@@ -203,6 +250,39 @@
             </div>
             <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
           </form>
+        </section>
+
+        <!-- Elderly Complaints Section -->
+        <section class="dashboard-section hidden" id="elderly-complaints-section">
+          <h3>تقديم شكوى أو بلاغ</h3>
+          <form id="complaint-form" class="profile-form">
+            <div class="form-group">
+              <label for="complaint-target">المتطوع المعني *</label>
+              <select id="complaint-target" name="targetId" required>
+                <option value="">-- اختر المتطوع --</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="complaint-type">نوع الشكوى *</label>
+              <select id="complaint-type" name="type" required>
+                <option value="">-- اختر نوع الشكوى --</option>
+                <option value="inappropriate_behavior">سلوك غير لائق</option>
+                <option value="no_show">عدم الحضور</option>
+                <option value="poor_service">خدمة سيئة</option>
+                <option value="safety_concern">مخاوف أمنية</option>
+                <option value="other">أخرى</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="complaint-description">وصف المشكلة *</label>
+              <textarea id="complaint-description" name="description" rows="4" required placeholder="صف ما حدث بالتفصيل..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">إرسال الشكوى</button>
+          </form>
+          <div id="my-complaints" class="complaints-list" style="margin-top: 2rem;">
+            <h4>شكاواي السابقة</h4>
+            <p class="empty-state">جارٍ التحميل...</p>
+          </div>
         </section>
       </div>
 

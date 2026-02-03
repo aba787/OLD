@@ -492,7 +492,7 @@ function setupSidebar(role) {
       navItems.push(
         { id: 'available', text: 'الطلبات المتاحة', icon: '📖' },
         { id: 'my-requests', text: 'طلباتي', icon: '📋' },
-        { id: 'hours', text: 'ساعات التطوع', icon: '⏰' },
+        { id: 'verification', text: 'حالة الاعتماد', icon: '✓' },
         { id: 'profile', text: 'ملفي الشخصي', icon: '👤' }
       );
       break;
@@ -500,6 +500,7 @@ function setupSidebar(role) {
       navItems.push(
         { id: 'request-help', text: 'اطلب المساعدة', icon: '🙏' },
         { id: 'my-requests', text: 'طلباتي', icon: '📋' },
+        { id: 'complaints', text: 'تقديم شكوى', icon: '⚠️' },
         { id: 'profile', text: 'ملفي الشخصي', icon: '👤' }
       );
       break;
@@ -545,11 +546,13 @@ function navigateToSection(role, sectionId) {
     const quickActions = dashboard.querySelector('.quick-actions');
     const requestsSection = document.getElementById('elderly-my-requests-section');
     const profileSection = document.getElementById('elderly-profile-section');
+    const complaintsSection = document.getElementById('elderly-complaints-section');
     
-    // Hide profile section by default, show others
+    // Hide all sections by default
     if (quickActions) quickActions.classList.add('hidden');
     if (requestsSection) requestsSection.classList.add('hidden');
     if (profileSection) profileSection.classList.add('hidden');
+    if (complaintsSection) complaintsSection.classList.add('hidden');
     
     switch (sectionId) {
       case 'request-help':
@@ -564,19 +567,34 @@ function navigateToSection(role, sectionId) {
         if (profileSection) profileSection.classList.remove('hidden');
         loadElderlyProfile();
         break;
+      case 'complaints':
+        if (complaintsSection) complaintsSection.classList.remove('hidden');
+        loadMyComplaints();
+        break;
     }
   } else if (role === 'volunteer') {
-    // For volunteer, scroll to section or show relevant content
-    const sectionsMap = {
-      'available': dashboard.querySelectorAll('.dashboard-section')[0],
-      'my-requests': dashboard.querySelectorAll('.dashboard-section')[1],
-      'hours': dashboard.querySelectorAll('.dashboard-section')[1],
-      'profile': null // Would need separate profile section
-    };
+    const verificationSection = document.getElementById('volunteer-verification-section');
+    const availableSection = dashboard.querySelectorAll('.dashboard-section')[1];
+    const myRequestsSection = dashboard.querySelectorAll('.dashboard-section')[2];
+    const profileSection = document.getElementById('volunteer-profile-section');
     
-    const targetSection = sectionsMap[sectionId];
-    if (targetSection) {
-      targetSection.scrollIntoView({ behavior: 'smooth' });
+    // Hide profile section by default
+    if (profileSection) profileSection.classList.add('hidden');
+    
+    switch (sectionId) {
+      case 'available':
+        if (availableSection) availableSection.scrollIntoView({ behavior: 'smooth' });
+        break;
+      case 'my-requests':
+        if (myRequestsSection) myRequestsSection.scrollIntoView({ behavior: 'smooth' });
+        break;
+      case 'verification':
+        if (verificationSection) verificationSection.scrollIntoView({ behavior: 'smooth' });
+        break;
+      case 'profile':
+        if (profileSection) profileSection.classList.remove('hidden');
+        profileSection.scrollIntoView({ behavior: 'smooth' });
+        break;
     }
   } else if (role === 'organization') {
     const sectionsMap = {
@@ -929,6 +947,9 @@ async function loadVolunteerDashboard(profile) {
   document.getElementById('vol-rating').textContent = profile.rating ? profile.rating.toFixed(1) : 'غير متاح';
   document.getElementById('vol-status').textContent = profile.verified ? 'معتمد ✓' : 'غير معتمد';
   
+  displayVolunteerVerificationInfo(profile);
+  loadVolunteerProfile(profile);
+  
   try {
     const requestsData = await apiRequest('/api/volunteer/requests');
     displayAvailableRequests(requestsData.requests || []);
@@ -943,6 +964,74 @@ async function loadVolunteerDashboard(profile) {
   } catch (error) {
     console.error('Error loading my requests:', error);
     displayMyActiveRequests([]);
+  }
+}
+
+function displayVolunteerVerificationInfo(profile) {
+  const verifiedBadge = document.getElementById('vol-verified-badge');
+  const orgInfo = document.getElementById('vol-organization-info');
+  const notVerifiedNote = document.getElementById('vol-not-verified-note');
+  
+  if (profile.verified) {
+    verifiedBadge.innerHTML = '<span class="verified-badge">✓ متطوع معتمد</span>';
+    notVerifiedNote.classList.add('hidden');
+    
+    if (profile.verifiedByOrg) {
+      orgInfo.classList.remove('hidden');
+      document.getElementById('vol-org-name').textContent = profile.verifiedByOrgName || 'منظمة معتمدة';
+      document.getElementById('vol-verified-date').textContent = formatDate(profile.verifiedAt);
+    }
+  } else {
+    verifiedBadge.innerHTML = '<span class="pending-badge">في انتظار الاعتماد</span>';
+    orgInfo.classList.add('hidden');
+    notVerifiedNote.classList.remove('hidden');
+  }
+}
+
+function loadVolunteerProfile(profile) {
+  const nameInput = document.getElementById('vol-name');
+  const phoneInput = document.getElementById('vol-phone');
+  const bioInput = document.getElementById('vol-bio');
+  
+  if (nameInput) nameInput.value = profile.fullName || '';
+  if (phoneInput) phoneInput.value = profile.phone || '';
+  if (bioInput) bioInput.value = profile.bio || '';
+  
+  if (profile.skills && profile.skills.length) {
+    profile.skills.forEach(skill => {
+      const checkbox = document.querySelector(`input[name="skills"][value="${skill}"]`);
+      if (checkbox) checkbox.checked = true;
+    });
+  }
+  
+  const form = document.getElementById('volunteer-profile-form');
+  if (form) {
+    form.addEventListener('submit', handleVolunteerProfileSubmit);
+  }
+}
+
+async function handleVolunteerProfileSubmit(e) {
+  e.preventDefault();
+  
+  const formData = new FormData(e.target);
+  const skills = [];
+  document.querySelectorAll('input[name="skills"]:checked').forEach(cb => {
+    skills.push(cb.value);
+  });
+  
+  try {
+    await apiRequest('/api/volunteer/profile', {
+      method: 'PUT',
+      body: JSON.stringify({
+        fullName: formData.get('fullName'),
+        phone: formData.get('phone'),
+        bio: formData.get('bio'),
+        skills: skills
+      })
+    });
+    showToast('تم حفظ الملف الشخصي بنجاح', 'success');
+  } catch (error) {
+    showToast('فشل حفظ الملف: ' + error.message, 'error');
   }
 }
 
@@ -1044,10 +1133,122 @@ async function loadElderlyDashboard() {
   try {
     const requestsData = await apiRequest('/api/elderly/requests');
     displayElderlyRequests(requestsData.requests || []);
+    loadComplaintTargets(requestsData.requests || []);
+    loadMyComplaints();
+    setupComplaintForm();
   } catch (error) {
     console.error('Error loading requests:', error);
     displayElderlyRequests([]);
   }
+}
+
+function loadComplaintTargets(requests) {
+  const select = document.getElementById('complaint-target');
+  if (!select) return;
+  
+  const volunteers = new Map();
+  requests.forEach(req => {
+    if (req.volunteerId && req.volunteerName) {
+      volunteers.set(req.volunteerId, req.volunteerName);
+    }
+  });
+  
+  select.innerHTML = '<option value="">-- اختر المتطوع --</option>';
+  volunteers.forEach((name, id) => {
+    const option = document.createElement('option');
+    option.value = id;
+    option.textContent = name;
+    select.appendChild(option);
+  });
+}
+
+function setupComplaintForm() {
+  const form = document.getElementById('complaint-form');
+  if (form && !form.hasAttribute('data-initialized')) {
+    form.setAttribute('data-initialized', 'true');
+    form.addEventListener('submit', handleComplaintSubmit);
+  }
+}
+
+async function handleComplaintSubmit(e) {
+  e.preventDefault();
+  
+  const formData = new FormData(e.target);
+  const targetId = formData.get('targetId');
+  const targetSelect = document.getElementById('complaint-target');
+  const targetName = targetSelect.options[targetSelect.selectedIndex]?.text || '';
+  
+  try {
+    await apiRequest('/api/elderly/complaints', {
+      method: 'POST',
+      body: JSON.stringify({
+        targetId,
+        targetName,
+        type: formData.get('type'),
+        description: formData.get('description')
+      })
+    });
+    showToast('تم إرسال الشكوى بنجاح. سيقوم المشرف بمراجعتها.', 'success');
+    e.target.reset();
+    loadMyComplaints();
+  } catch (error) {
+    showToast('فشل إرسال الشكوى: ' + error.message, 'error');
+  }
+}
+
+async function loadMyComplaints() {
+  const container = document.getElementById('my-complaints');
+  if (!container) return;
+  
+  try {
+    const data = await apiRequest('/api/elderly/complaints');
+    displayMyComplaints(data.complaints || []);
+  } catch (error) {
+    console.error('Error loading complaints:', error);
+    container.innerHTML = '<h4>شكاواي السابقة</h4><p class="empty-state">فشل تحميل الشكاوى</p>';
+  }
+}
+
+function displayMyComplaints(complaints) {
+  const container = document.getElementById('my-complaints');
+  
+  const statusLabels = {
+    pending: 'في الانتظار',
+    under_review: 'قيد المراجعة',
+    resolved: 'تم الحل',
+    dismissed: 'مرفوض'
+  };
+  
+  const typeLabels = {
+    inappropriate_behavior: 'سلوك غير لائق',
+    no_show: 'عدم الحضور',
+    poor_service: 'خدمة سيئة',
+    safety_concern: 'مخاوف أمنية',
+    other: 'أخرى'
+  };
+  
+  if (!complaints.length) {
+    container.innerHTML = '<h4>شكاواي السابقة</h4><p class="empty-state">لا توجد شكاوى سابقة</p>';
+    return;
+  }
+  
+  container.innerHTML = `
+    <h4>شكاواي السابقة</h4>
+    ${complaints.map(comp => `
+      <div class="complaint-item status-${comp.status}">
+        <div class="complaint-header">
+          <span class="complaint-type">${typeLabels[comp.type] || comp.type}</span>
+          <span class="complaint-status">${statusLabels[comp.status] || comp.status}</span>
+        </div>
+        <p class="complaint-description">${comp.description}</p>
+        <div class="complaint-meta">
+          <span>ضد: ${comp.targetName}</span>
+          <span>${formatRelativeTime(comp.createdAt)}</span>
+        </div>
+        ${comp.adminNotes ? `<p class="admin-notes"><strong>رد المشرف:</strong> ${comp.adminNotes}</p>` : ''}
+      </div>
+    `).join('')}
+  `;
 }
 
 /**

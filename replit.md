@@ -170,6 +170,19 @@ The server will start on port 5000.
   - Other roles: smooth scroll to sections
   - Added elderly profile section with handleUpdateElderlyProfile()
   - Added loadElderlyProfile() to populate form with existing data
+- **February 2026**: Activity Logs, Complaints & Verification System
+  - Created ActivityLogController for logging all platform operations
+  - Added ACTION_TYPES: request_created, request_accepted, request_completed, user_approved, etc.
+  - Integrated activity logging into all major controllers (volunteer, elderly, admin)
+  - Created ComplaintController for filing and reviewing complaints
+  - Admin can view activity logs with filtering by action type
+  - Admin complaints section with status management (pending, under_review, resolved, dismissed)
+  - Admin can suspend user accounts directly from complaint review
+  - Elderly users can file complaints against volunteers from dashboard
+  - Volunteer verification info section showing organization and verification date
+  - Added volunteer profile form with skills checkboxes
+  - New CSS styles: activity-item, complaint-item, verification-card, skills-checkboxes
+  - Updated sidebar navigation to include complaints (elderly) and verification (volunteer)
 
 ## Notes
 - The application runs in demo mode if Firebase is not configured
