@@ -145,6 +145,11 @@ async function apiRequest(url, options = {}) {
     }
   }
   
+  // Send user role in header for demo mode (when server can't access Firestore)
+  if (typeof userProfile !== 'undefined' && userProfile && userProfile.role) {
+    defaultHeaders['X-User-Role'] = userProfile.role;
+  }
+  
   const response = await fetch(url, {
     ...options,
     headers: {

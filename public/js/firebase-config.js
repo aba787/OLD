@@ -96,6 +96,11 @@ async function apiRequest(url, options = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
   
+  // Send user role in header for demo mode (when server can't access Firestore)
+  if (typeof userProfile !== 'undefined' && userProfile && userProfile.role) {
+    headers['X-User-Role'] = userProfile.role;
+  }
+  
   const response = await fetch(url, {
     ...options,
     headers,

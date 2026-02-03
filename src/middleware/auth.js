@@ -41,21 +41,59 @@ const verifyToken = async (req, res, next) => {
           const jsonPayload = Buffer.from(base64, 'base64').toString('utf8');
           const decoded = JSON.parse(jsonPayload);
           
-          req.user = {
-            uid: decoded.user_id || decoded.sub,
-            email: decoded.email,
-            role: 'pending',
-            fullName: decoded.name || 'مستخدم',
-            status: 'approved'
-          };
+          const uid = decoded.user_id || decoded.sub;
           
-          // Try to get user data from Firestore if db is available
+          // CRITICAL: Get user data from Firestore to get the correct role
           if (db) {
-            const userDoc = await db.collection('users').doc(req.user.uid).get();
-            if (userDoc.exists) {
-              const userData = userDoc.data();
-              req.user = { ...req.user, ...userData };
+            try {
+              const userDoc = await db.collection('users').doc(uid).get();
+              if (userDoc.exists) {
+                const userData = userDoc.data();
+                req.user = { 
+                  uid: uid,
+                  email: decoded.email || userData.email,
+                  role: userData.role || 'pending',
+                  fullName: userData.fullName || decoded.name || 'مستخدم',
+                  status: userData.status || 'approved',
+                  ...userData
+                };
+                console.log('User loaded from Firestore:', uid, 'role:', req.user.role);
+              } else {
+                console.warn('User document not found in Firestore for uid:', uid);
+                // User not in Firestore, allow with basic info
+                req.user = {
+                  uid: uid,
+                  email: decoded.email,
+                  role: 'elderly', // Default to elderly for missing users
+                  fullName: decoded.name || 'مستخدم',
+                  status: 'approved'
+                };
+              }
+            } catch (firestoreError) {
+              console.warn('Could not fetch user from Firestore:', firestoreError.message);
+              req.user = {
+                uid: uid,
+                email: decoded.email,
+                role: 'elderly',
+                fullName: decoded.name || 'مستخدم',
+                status: 'approved'
+              };
             }
+          } else {
+            // No Firestore connection - DEMO MODE
+            // SECURITY: Only allow elderly role in demo mode without Firestore
+            // This prevents role spoofing for privileged roles (admin/volunteer/organization)
+            const clientRole = req.headers['x-user-role'];
+            const safeRole = (clientRole === 'elderly') ? 'elderly' : 'elderly';
+            
+            req.user = {
+              uid: uid,
+              email: decoded.email,
+              role: safeRole,
+              fullName: decoded.name || 'مستخدم',
+              status: 'approved'
+            };
+            console.log('Demo mode (no Firestore) - using safe role:', safeRole);
           }
           
           return next();
@@ -64,15 +102,17 @@ const verifyToken = async (req, res, next) => {
         }
       }
       
-      // No token or decode failed - use demo user
+      // No token or decode failed - use demo user with ELDERLY role only
+      // SECURITY: Demo mode only allows elderly role to prevent privilege escalation
       if (demoMode || !token) {
         req.user = { 
-          uid: 'demo-user-' + demoRole, 
-          email: `demo-${demoRole}@example.com`, 
-          role: demoRole,
-          fullName: 'Demo ' + demoRole.charAt(0).toUpperCase() + demoRole.slice(1),
+          uid: 'demo-user-elderly', 
+          email: 'demo-elderly@example.com', 
+          role: 'elderly',  // Always elderly in demo mode for security
+          fullName: 'مستخدم تجريبي',
           status: 'approved'
         };
+        console.log('Demo mode - using elderly role for security');
         return next();
       }
       
