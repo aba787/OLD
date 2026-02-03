@@ -1,0 +1,134 @@
+What I need you to add / adjust in the project
+
+1. User Flow & Roles (Very Important)
+Please make sure the platform clearly supports 4 roles:
+
+Elderly User
+
+Volunteer
+
+Organization
+
+Admin
+
+Each role must have:
+
+A dedicated dashboard
+
+Clear permissions (what they can and cannot do)
+
+2. After Registration – Clear Usage Flow
+After account creation, the experience should be:
+
+Elderly User:
+
+Create a help request (shopping, hospital visit, companionship, paperwork, etc.)
+
+Select help type, description, and location
+
+Track request status (Pending / Accepted / Completed)
+
+Rate the volunteer after completion
+
+Volunteer:
+
+Account requires admin approval before activation
+
+Browse available help requests
+
+Accept suitable requests
+
+Mark tasks as completed
+
+Track total volunteer hours in profile
+
+Organization:
+
+Account requires admin approval
+
+View and manage volunteers linked to the organization
+
+Verify volunteers and issue trust certificates
+
+View volunteer statistics
+
+Admin:
+
+Approve or reject volunteers and organizations
+
+Manage all users
+
+View full platform analytics
+
+Suspend or block accounts if needed
+
+3. Safety & Trust Features (Critical)
+This must be implemented clearly:
+
+Admin approval for volunteers and organizations
+
+Organizations can verify volunteers
+
+Volunteers have visible profiles with:
+
+Total volunteer hours
+
+Verification status
+
+Ratings
+
+All actions logged (for accountability)
+
+This is not optional. Safety is core to the platform.
+
+4. UI / UX Requirements
+Please apply the following strictly:
+
+Clean, modern, human-centered design
+
+No overdesign, no flashy effects
+
+High readability
+
+Large buttons and text (elderly-friendly)
+
+Arabic RTL support by default
+
+Consistent spacing and calm colors
+
+5. Typography & Visual Style
+
+Use a professional, modern Arabic font
+
+High contrast for accessibility
+
+Smooth, simple layout
+
+Elegant but minimal
+
+Quality over decoration
+
+6. Core Features That Must Exist
+
+Volunteer hours tracking
+
+Rating system
+
+Request status tracking
+
+Admin approval system
+
+Role-based dashboards
+
+Trust & verification indicators
+
+7. Concept Clarification (So He Understands the Idea)
+This is not just a website.
+It’s a humanitarian social platform that connects:
+
+Elderly people who need daily-life help
+with
+
+Verified volunteers and organizations
+
+The goal is safety, trust, and dignity, not just task matching.
