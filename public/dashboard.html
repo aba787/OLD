@@ -142,11 +142,40 @@
           </div>
         </div>
 
-        <section class="dashboard-section">
+        <section class="dashboard-section" id="elderly-my-requests-section">
           <h3>طلباتي</h3>
           <div id="elderly-requests" class="request-list">
             <p class="empty-state">جارٍ تحميل طلباتك...</p>
           </div>
+        </section>
+
+        <section class="dashboard-section hidden" id="elderly-profile-section">
+          <h3>ملفي الشخصي</h3>
+          <form id="elderly-profile-form" class="profile-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="elderly-name">الاسم الكامل</label>
+                <input type="text" id="elderly-name" name="fullName">
+              </div>
+              <div class="form-group">
+                <label for="elderly-phone">رقم الهاتف</label>
+                <input type="tel" id="elderly-phone" name="phone">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="elderly-address">العنوان</label>
+              <input type="text" id="elderly-address" name="address">
+            </div>
+            <div class="form-group">
+              <label for="elderly-emergency">جهة اتصال الطوارئ</label>
+              <input type="text" id="elderly-emergency" name="emergencyContact" placeholder="الاسم ورقم الهاتف">
+            </div>
+            <div class="form-group">
+              <label for="elderly-needs">احتياجات خاصة</label>
+              <textarea id="elderly-needs" name="specialNeeds" rows="2" placeholder="أي احتياجات خاصة أو ملاحظات للمتطوعين..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+          </form>
         </section>
       </div>
 

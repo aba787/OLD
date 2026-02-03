@@ -38,6 +38,7 @@ async function initializeDashboard() {
   document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
   document.getElementById('request-form')?.addEventListener('submit', handleCreateRequest);
   document.getElementById('org-profile-form')?.addEventListener('submit', handleUpdateOrgProfile);
+  document.getElementById('elderly-profile-form')?.addEventListener('submit', handleUpdateElderlyProfile);
 }
 
 /**
@@ -108,13 +109,15 @@ function getRoleCollection(role) {
 }
 
 /**
- * Create role-specific profile
+ * Create role-specific profile - direct Firestore write
+ * This is called when user document exists but role profile is missing
  */
 async function createRoleProfile(db, user, userData) {
   const now = new Date().toISOString();
   const role = userData.role;
   let profile = {};
   
+  // Direct Firestore write - rules should allow authenticated users to write their own profile
   if (role === 'elderly') {
     profile = {
       uid: user.uid,
@@ -479,39 +482,139 @@ function setupSidebar(role) {
   switch (role) {
     case 'admin':
       navItems.push(
-        { href: '#overview', text: 'نظرة عامة', icon: '📊' },
-        { href: '#users', text: 'إدارة المستخدمين', icon: '👥' },
-        { href: '#requests', text: 'جميع الطلبات', icon: '📋' },
-        { href: '#stats', text: 'الإحصائيات', icon: '📈' }
+        { id: 'overview', text: 'نظرة عامة', icon: '📊' },
+        { id: 'users', text: 'إدارة المستخدمين', icon: '👥' },
+        { id: 'requests', text: 'جميع الطلبات', icon: '📋' },
+        { id: 'stats', text: 'الإحصائيات', icon: '📈' }
       );
       break;
     case 'volunteer':
       navItems.push(
-        { href: '#available', text: 'الطلبات المتاحة', icon: '📖' },
-        { href: '#my-requests', text: 'طلباتي', icon: '📋' },
-        { href: '#hours', text: 'ساعات التطوع', icon: '⏰' },
-        { href: '#profile', text: 'ملفي الشخصي', icon: '👤' }
+        { id: 'available', text: 'الطلبات المتاحة', icon: '📖' },
+        { id: 'my-requests', text: 'طلباتي', icon: '📋' },
+        { id: 'hours', text: 'ساعات التطوع', icon: '⏰' },
+        { id: 'profile', text: 'ملفي الشخصي', icon: '👤' }
       );
       break;
     case 'elderly':
       navItems.push(
-        { href: '#request-help', text: 'اطلب المساعدة', icon: '🙏' },
-        { href: '#my-requests', text: 'طلباتي', icon: '📋' },
-        { href: '#profile', text: 'ملفي الشخصي', icon: '👤' }
+        { id: 'request-help', text: 'اطلب المساعدة', icon: '🙏' },
+        { id: 'my-requests', text: 'طلباتي', icon: '📋' },
+        { id: 'profile', text: 'ملفي الشخصي', icon: '👤' }
       );
       break;
     case 'organization':
       navItems.push(
-        { href: '#overview', text: 'نظرة عامة', icon: '🏢' },
-        { href: '#volunteers', text: 'المتطوعون', icon: '👥' },
-        { href: '#profile', text: 'ملف المنظمة', icon: '👤' }
+        { id: 'overview', text: 'نظرة عامة', icon: '🏢' },
+        { id: 'volunteers', text: 'المتطوعون', icon: '👥' },
+        { id: 'profile', text: 'ملف المنظمة', icon: '👤' }
       );
       break;
   }
   
-  nav.innerHTML = navItems.map(item => 
-    `<a href="${item.href}"><span>${item.icon}</span> ${item.text}</a>`
+  nav.innerHTML = navItems.map((item, index) => 
+    `<a href="#${item.id}" data-section="${item.id}" class="${index === 0 ? 'active' : ''}"><span>${item.icon}</span> ${item.text}</a>`
   ).join('');
+  
+  // Add click handlers for navigation
+  nav.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const sectionId = link.dataset.section;
+      navigateToSection(role, sectionId);
+      
+      // Update active state
+      nav.querySelectorAll('a').forEach(a => a.classList.remove('active'));
+      link.classList.add('active');
+    });
+  });
+}
+
+/**
+ * Navigate to a section within the dashboard
+ */
+function navigateToSection(role, sectionId) {
+  // Get the dashboard container for the current role
+  const dashboard = document.getElementById(`${role}-dashboard`);
+  if (!dashboard) return;
+  
+  // Get all sections in this dashboard
+  const allSections = dashboard.querySelectorAll('.dashboard-section, .quick-actions, .stats-grid, .notice');
+  
+  if (role === 'elderly') {
+    const quickActions = dashboard.querySelector('.quick-actions');
+    const requestsSection = document.getElementById('elderly-my-requests-section');
+    const profileSection = document.getElementById('elderly-profile-section');
+    
+    // Hide profile section by default, show others
+    if (quickActions) quickActions.classList.add('hidden');
+    if (requestsSection) requestsSection.classList.add('hidden');
+    if (profileSection) profileSection.classList.add('hidden');
+    
+    switch (sectionId) {
+      case 'request-help':
+        if (quickActions) quickActions.classList.remove('hidden');
+        if (requestsSection) requestsSection.classList.remove('hidden');
+        break;
+      case 'my-requests':
+        if (requestsSection) requestsSection.classList.remove('hidden');
+        loadElderlyDashboard();
+        break;
+      case 'profile':
+        if (profileSection) profileSection.classList.remove('hidden');
+        loadElderlyProfile();
+        break;
+    }
+  } else if (role === 'volunteer') {
+    // For volunteer, scroll to section or show relevant content
+    const sectionsMap = {
+      'available': dashboard.querySelectorAll('.dashboard-section')[0],
+      'my-requests': dashboard.querySelectorAll('.dashboard-section')[1],
+      'hours': dashboard.querySelectorAll('.dashboard-section')[1],
+      'profile': null // Would need separate profile section
+    };
+    
+    const targetSection = sectionsMap[sectionId];
+    if (targetSection) {
+      targetSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  } else if (role === 'organization') {
+    const sectionsMap = {
+      'overview': dashboard.querySelector('.stats-grid'),
+      'volunteers': dashboard.querySelectorAll('.dashboard-section')[1],
+      'profile': dashboard.querySelectorAll('.dashboard-section')[0]
+    };
+    
+    const targetSection = sectionsMap[sectionId];
+    if (targetSection) {
+      targetSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  } else if (role === 'admin') {
+    const sectionsMap = {
+      'overview': dashboard.querySelector('.stats-grid'),
+      'users': dashboard.querySelectorAll('.dashboard-section')[0],
+      'requests': dashboard.querySelectorAll('.dashboard-section')[1],
+      'stats': dashboard.querySelector('.stats-grid')
+    };
+    
+    const targetSection = sectionsMap[sectionId];
+    if (targetSection) {
+      targetSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+}
+
+/**
+ * Load elderly profile into form
+ */
+function loadElderlyProfile() {
+  if (userProfile) {
+    document.getElementById('elderly-name').value = userProfile.fullName || '';
+    document.getElementById('elderly-phone').value = userProfile.phone || '';
+    document.getElementById('elderly-address').value = userProfile.address || '';
+    document.getElementById('elderly-emergency').value = userProfile.emergencyContact || '';
+    document.getElementById('elderly-needs').value = userProfile.specialNeeds || '';
+  }
 }
 
 /**
@@ -968,6 +1071,42 @@ async function handleUpdateOrgProfile(e) {
     showToast('تم تحديث ملف المنظمة بنجاح!', 'success');
   } catch (error) {
     showToast('فشل تحديث الملف: ' + error.message, 'error');
+  }
+}
+
+/**
+ * Handle elderly profile update - تحديث ملف المستخدم المسن
+ */
+async function handleUpdateElderlyProfile(e) {
+  e.preventDefault();
+  
+  const formData = new FormData(e.target);
+  const data = {
+    fullName: formData.get('fullName'),
+    phone: formData.get('phone'),
+    address: formData.get('address'),
+    emergencyContact: formData.get('emergencyContact'),
+    specialNeeds: formData.get('specialNeeds')
+  };
+  
+  try {
+    await apiRequest('/api/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+    
+    // Update local userProfile
+    if (userProfile) {
+      userProfile.fullName = data.fullName || userProfile.fullName;
+      userProfile.phone = data.phone || userProfile.phone;
+      userProfile.address = data.address || userProfile.address;
+      userProfile.emergencyContact = data.emergencyContact || userProfile.emergencyContact;
+      userProfile.specialNeeds = data.specialNeeds || userProfile.specialNeeds;
+    }
+    
+    showToast('تم حفظ ملفك الشخصي بنجاح!', 'success');
+  } catch (error) {
+    showToast('فشل حفظ الملف الشخصي: ' + error.message, 'error');
   }
 }
 
