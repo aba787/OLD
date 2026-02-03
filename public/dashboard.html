@@ -68,8 +68,35 @@
 
         <section class="dashboard-section">
           <h3>النشاط الأخير</h3>
+          <div class="filter-bar">
+            <select id="activity-filter" onchange="loadActivityLogs()">
+              <option value="">جميع الأنشطة</option>
+              <option value="request_created">إنشاء طلب</option>
+              <option value="request_accepted">قبول طلب</option>
+              <option value="request_completed">إتمام طلب</option>
+              <option value="user_approved">اعتماد مستخدم</option>
+              <option value="user_suspended">إيقاف حساب</option>
+              <option value="complaint_filed">تقديم شكوى</option>
+            </select>
+          </div>
           <div id="recent-activity" class="activity-list">
             <p class="empty-state">جارٍ تحميل النشاط الأخير...</p>
+          </div>
+        </section>
+
+        <section class="dashboard-section" id="admin-complaints-section">
+          <h3>الشكاوى والبلاغات</h3>
+          <div class="filter-bar">
+            <select id="complaint-filter" onchange="loadComplaints()">
+              <option value="">جميع الشكاوى</option>
+              <option value="pending">في الانتظار</option>
+              <option value="under_review">قيد المراجعة</option>
+              <option value="resolved">تم الحل</option>
+              <option value="dismissed">مرفوض</option>
+            </select>
+          </div>
+          <div id="complaints-list" class="complaints-list">
+            <p class="empty-state">جارٍ تحميل الشكاوى...</p>
           </div>
         </section>
       </div>

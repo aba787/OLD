@@ -662,6 +662,9 @@ async function loadAdminDashboard() {
     const pendingData = await apiRequest('/api/admin/users/pending');
     displayPendingUsers(pendingData.users || []);
     
+    loadActivityLogs();
+    loadComplaints();
+    
   } catch (error) {
     console.error('Error loading admin dashboard:', error);
     document.getElementById('stat-total-users').textContent = '٠';
@@ -670,6 +673,178 @@ async function loadAdminDashboard() {
     document.getElementById('stat-requests').textContent = '٠';
     
     displayPendingUsers([]);
+  }
+}
+
+async function loadActivityLogs() {
+  const filter = document.getElementById('activity-filter')?.value || '';
+  const container = document.getElementById('recent-activity');
+  
+  try {
+    const url = filter ? `/api/admin/activity-logs?action=${filter}` : '/api/admin/activity-logs';
+    const data = await apiRequest(url);
+    displayActivityLogs(data.logs || []);
+  } catch (error) {
+    console.error('Error loading activity logs:', error);
+    container.innerHTML = '<p class="empty-state">فشل تحميل سجل الأنشطة</p>';
+  }
+}
+
+function displayActivityLogs(logs) {
+  const container = document.getElementById('recent-activity');
+  
+  if (!logs.length) {
+    container.innerHTML = '<p class="empty-state">لا توجد أنشطة مسجلة</p>';
+    return;
+  }
+  
+  const actionLabels = {
+    request_created: 'إنشاء طلب',
+    request_accepted: 'قبول طلب',
+    request_completed: 'إتمام طلب',
+    request_cancelled: 'إلغاء طلب',
+    request_rated: 'تقييم طلب',
+    user_registered: 'تسجيل مستخدم',
+    user_approved: 'اعتماد مستخدم',
+    user_rejected: 'رفض مستخدم',
+    user_suspended: 'إيقاف حساب',
+    volunteer_verified: 'اعتماد متطوع',
+    complaint_filed: 'تقديم شكوى',
+    complaint_resolved: 'حل شكوى'
+  };
+  
+  container.innerHTML = logs.slice(0, 20).map(log => `
+    <div class="activity-item">
+      <div class="activity-icon">${getActivityIcon(log.action)}</div>
+      <div class="activity-content">
+        <strong>${log.actorName}</strong> - ${actionLabels[log.action] || log.action}
+        ${log.details?.targetName ? `<br><small>الهدف: ${log.details.targetName}</small>` : ''}
+      </div>
+      <div class="activity-time">${formatRelativeTime(log.timestamp)}</div>
+    </div>
+  `).join('');
+}
+
+function getActivityIcon(action) {
+  const icons = {
+    request_created: '📝',
+    request_accepted: '✅',
+    request_completed: '🎉',
+    request_cancelled: '❌',
+    user_approved: '👍',
+    user_rejected: '👎',
+    user_suspended: '🚫',
+    complaint_filed: '⚠️',
+    complaint_resolved: '✔️'
+  };
+  return icons[action] || '📋';
+}
+
+function formatRelativeTime(timestamp) {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diff = now - date;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  
+  if (minutes < 1) return 'الآن';
+  if (minutes < 60) return `منذ ${minutes} دقيقة`;
+  if (hours < 24) return `منذ ${hours} ساعة`;
+  return `منذ ${days} يوم`;
+}
+
+async function loadComplaints() {
+  const filter = document.getElementById('complaint-filter')?.value || '';
+  const container = document.getElementById('complaints-list');
+  
+  try {
+    const url = filter ? `/api/admin/complaints?status=${filter}` : '/api/admin/complaints';
+    const data = await apiRequest(url);
+    displayComplaints(data.complaints || []);
+  } catch (error) {
+    console.error('Error loading complaints:', error);
+    container.innerHTML = '<p class="empty-state">فشل تحميل الشكاوى</p>';
+  }
+}
+
+function displayComplaints(complaints) {
+  const container = document.getElementById('complaints-list');
+  
+  if (!complaints.length) {
+    container.innerHTML = '<p class="empty-state">لا توجد شكاوى</p>';
+    return;
+  }
+  
+  const typeLabels = {
+    inappropriate_behavior: 'سلوك غير لائق',
+    no_show: 'عدم الحضور',
+    poor_service: 'خدمة سيئة',
+    safety_concern: 'مخاوف أمنية',
+    other: 'أخرى'
+  };
+  
+  const statusLabels = {
+    pending: 'في الانتظار',
+    under_review: 'قيد المراجعة',
+    resolved: 'تم الحل',
+    dismissed: 'مرفوض'
+  };
+  
+  container.innerHTML = complaints.map(comp => `
+    <div class="complaint-item status-${comp.status}">
+      <div class="complaint-header">
+        <span class="complaint-type">${typeLabels[comp.type] || comp.type}</span>
+        <span class="complaint-status">${statusLabels[comp.status] || comp.status}</span>
+      </div>
+      <p class="complaint-description">${comp.description}</p>
+      <div class="complaint-meta">
+        <span>من: ${comp.reporterName}</span>
+        <span>ضد: ${comp.targetName}</span>
+        <span>${formatRelativeTime(comp.createdAt)}</span>
+      </div>
+      ${comp.status === 'pending' || comp.status === 'under_review' ? `
+        <div class="complaint-actions">
+          <button class="btn btn-small btn-primary" onclick="reviewComplaint('${comp.id}', 'under_review')">مراجعة</button>
+          <button class="btn btn-small btn-success" onclick="reviewComplaint('${comp.id}', 'resolved')">حل</button>
+          <button class="btn btn-small btn-outline" onclick="reviewComplaint('${comp.id}', 'dismissed')">رفض</button>
+          <button class="btn btn-small btn-danger" onclick="reviewComplaintWithAction('${comp.id}', 'suspend_user')">إيقاف الحساب</button>
+        </div>
+      ` : ''}
+    </div>
+  `).join('');
+}
+
+async function reviewComplaint(complaintId, status) {
+  const adminNotes = prompt('ملاحظات المراجعة (اختياري):') || '';
+  
+  try {
+    await apiRequest(`/api/admin/complaints/${complaintId}/review`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, adminNotes })
+    });
+    showToast('تم تحديث الشكوى بنجاح', 'success');
+    loadComplaints();
+  } catch (error) {
+    showToast('فشل تحديث الشكوى: ' + error.message, 'error');
+  }
+}
+
+async function reviewComplaintWithAction(complaintId, action) {
+  if (!confirm('هل أنت متأكد من إيقاف حساب المستخدم؟')) return;
+  
+  const adminNotes = prompt('سبب الإيقاف:') || 'مخالفة لقواعد المنصة';
+  
+  try {
+    await apiRequest(`/api/admin/complaints/${complaintId}/review`, {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'resolved', adminNotes, action })
+    });
+    showToast('تم إيقاف الحساب وحل الشكوى', 'success');
+    loadComplaints();
+    loadAdminDashboard();
+  } catch (error) {
+    showToast('فشل الإجراء: ' + error.message, 'error');
   }
 }
 

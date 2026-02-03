@@ -8,6 +8,7 @@
  */
 
 const { db, auth } = require('../firebase');
+const { logActivity, ACTION_TYPES } = require('./activityLogController');
 
 /**
  * Get all users with optional filtering
@@ -93,8 +94,21 @@ const approveUser = async (req, res) => {
     const { userId } = req.params;
     
     if (!db) {
-      return res.json({ message: 'User approved successfully (demo mode)' });
+      await logActivity(
+        ACTION_TYPES.USER_APPROVED,
+        req.user.uid,
+        req.user.fullName,
+        req.user.role,
+        userId,
+        'user',
+        { action: 'approve' }
+      );
+      return res.json({ message: 'تم اعتماد المستخدم بنجاح' });
     }
+
+    // Get user info before update for logging
+    const userDoc = await db.collection('users').doc(userId).get();
+    const userData = userDoc.exists ? userDoc.data() : {};
 
     // Update user status in Firestore
     await db.collection('users').doc(userId).update({
@@ -105,18 +119,24 @@ const approveUser = async (req, res) => {
     });
 
     // Update custom claims
-    if (auth) {
-      const userDoc = await db.collection('users').doc(userId).get();
-      if (userDoc.exists) {
-        const userData = userDoc.data();
-        await auth.setCustomUserClaims(userId, { 
-          role: userData.role, 
-          status: 'approved' 
-        });
-      }
+    if (auth && userDoc.exists) {
+      await auth.setCustomUserClaims(userId, { 
+        role: userData.role, 
+        status: 'approved' 
+      });
     }
 
-    res.json({ message: 'User approved successfully' });
+    await logActivity(
+      ACTION_TYPES.USER_APPROVED,
+      req.user.uid,
+      req.user.fullName,
+      req.user.role,
+      userId,
+      'user',
+      { targetName: userData.fullName, targetRole: userData.role }
+    );
+
+    res.json({ message: 'تم اعتماد المستخدم بنجاح' });
   } catch (error) {
     console.error('Approve user error:', error);
     res.status(500).json({ error: 'Failed to approve user' });
@@ -132,8 +152,20 @@ const rejectUser = async (req, res) => {
     const { reason } = req.body;
     
     if (!db) {
-      return res.json({ message: 'User rejected (demo mode)' });
+      await logActivity(
+        ACTION_TYPES.USER_REJECTED,
+        req.user.uid,
+        req.user.fullName,
+        req.user.role,
+        userId,
+        'user',
+        { reason }
+      );
+      return res.json({ message: 'تم رفض التسجيل' });
     }
+
+    const userDoc = await db.collection('users').doc(userId).get();
+    const userData = userDoc.exists ? userDoc.data() : {};
 
     await db.collection('users').doc(userId).update({
       status: 'rejected',
@@ -143,7 +175,17 @@ const rejectUser = async (req, res) => {
       updatedAt: new Date().toISOString()
     });
 
-    res.json({ message: 'User registration rejected' });
+    await logActivity(
+      ACTION_TYPES.USER_REJECTED,
+      req.user.uid,
+      req.user.fullName,
+      req.user.role,
+      userId,
+      'user',
+      { targetName: userData.fullName, reason }
+    );
+
+    res.json({ message: 'تم رفض التسجيل' });
   } catch (error) {
     console.error('Reject user error:', error);
     res.status(500).json({ error: 'Failed to reject user' });
@@ -159,8 +201,20 @@ const suspendUser = async (req, res) => {
     const { reason } = req.body;
     
     if (!db) {
-      return res.json({ message: 'User suspended (demo mode)' });
+      await logActivity(
+        ACTION_TYPES.USER_SUSPENDED,
+        req.user.uid,
+        req.user.fullName,
+        req.user.role,
+        userId,
+        'user',
+        { reason }
+      );
+      return res.json({ message: 'تم إيقاف الحساب' });
     }
+
+    const userDoc = await db.collection('users').doc(userId).get();
+    const userData = userDoc.exists ? userDoc.data() : {};
 
     await db.collection('users').doc(userId).update({
       status: 'suspended',
@@ -175,7 +229,17 @@ const suspendUser = async (req, res) => {
       await auth.setCustomUserClaims(userId, { status: 'suspended' });
     }
 
-    res.json({ message: 'User suspended successfully' });
+    await logActivity(
+      ACTION_TYPES.USER_SUSPENDED,
+      req.user.uid,
+      req.user.fullName,
+      req.user.role,
+      userId,
+      'user',
+      { targetName: userData.fullName, reason }
+    );
+
+    res.json({ message: 'تم إيقاف الحساب بنجاح' });
   } catch (error) {
     console.error('Suspend user error:', error);
     res.status(500).json({ error: 'Failed to suspend user' });

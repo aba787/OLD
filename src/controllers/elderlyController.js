@@ -9,6 +9,7 @@
 
 const { db } = require('../firebase');
 const { validationResult } = require('express-validator');
+const { logActivity, ACTION_TYPES } = require('./activityLogController');
 
 /**
  * Create a new help request
@@ -36,16 +37,36 @@ const createRequest = async (req, res) => {
     };
 
     if (!db) {
+      await logActivity(
+        ACTION_TYPES.REQUEST_CREATED,
+        req.user.uid,
+        req.user.fullName,
+        req.user.role,
+        'demo-1',
+        'request',
+        { type, urgency }
+      );
+      
       return res.json({ 
-        message: 'Request created (demo mode)',
+        message: 'تم إنشاء الطلب بنجاح',
         request: { id: 'demo-1', ...requestData }
       });
     }
 
     const docRef = await db.collection('requests').add(requestData);
+    
+    await logActivity(
+      ACTION_TYPES.REQUEST_CREATED,
+      req.user.uid,
+      req.user.fullName,
+      req.user.role,
+      docRef.id,
+      'request',
+      { type, urgency }
+    );
 
     res.status(201).json({ 
-      message: 'Help request created successfully',
+      message: 'تم إنشاء طلب المساعدة بنجاح',
       request: { id: docRef.id, ...requestData }
     });
   } catch (error) {

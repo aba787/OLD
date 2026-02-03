@@ -11,6 +11,8 @@
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
+const { getActivityLogs } = require('../controllers/activityLogController');
+const { getAllComplaints, reviewComplaint } = require('../controllers/complaintController');
 const { verifyToken, adminOnly } = require('../middleware/auth');
 
 // All admin routes require authentication and admin role
@@ -64,5 +66,25 @@ router.get('/stats', adminController.getStats);
  * Get all help requests for monitoring
  */
 router.get('/requests', adminController.getAllRequests);
+
+/**
+ * GET /api/admin/activity-logs
+ * Get platform activity logs for monitoring
+ * Query params: action, startDate, endDate, limit
+ */
+router.get('/activity-logs', getActivityLogs);
+
+/**
+ * GET /api/admin/complaints
+ * Get all complaints
+ * Query params: status
+ */
+router.get('/complaints', getAllComplaints);
+
+/**
+ * PUT /api/admin/complaints/:id/review
+ * Review and update a complaint
+ */
+router.put('/complaints/:id/review', reviewComplaint);
 
 module.exports = router;

@@ -9,6 +9,7 @@
 
 const { db } = require('../firebase');
 const { validationResult } = require('express-validator');
+const { logActivity, ACTION_TYPES } = require('./activityLogController');
 
 /**
  * Get volunteer's profile
@@ -139,19 +140,28 @@ const acceptRequest = async (req, res) => {
     const { requestId } = req.params;
     
     if (!db) {
-      return res.json({ message: 'Request accepted (demo mode)' });
+      await logActivity(
+        ACTION_TYPES.REQUEST_ACCEPTED,
+        req.user.uid,
+        req.user.fullName,
+        req.user.role,
+        requestId,
+        'request',
+        {}
+      );
+      return res.json({ message: 'تم قبول الطلب بنجاح' });
     }
 
     const requestRef = db.collection('requests').doc(requestId);
     const requestDoc = await requestRef.get();
 
     if (!requestDoc.exists) {
-      return res.status(404).json({ error: 'Request not found' });
+      return res.status(404).json({ error: 'الطلب غير موجود' });
     }
 
     const request = requestDoc.data();
     if (request.status !== 'pending') {
-      return res.status(400).json({ error: 'This request is no longer available' });
+      return res.status(400).json({ error: 'هذا الطلب لم يعد متاحاً' });
     }
 
     // Update request with volunteer assignment
@@ -163,7 +173,17 @@ const acceptRequest = async (req, res) => {
       updatedAt: new Date().toISOString()
     });
 
-    res.json({ message: 'Request accepted successfully' });
+    await logActivity(
+      ACTION_TYPES.REQUEST_ACCEPTED,
+      req.user.uid,
+      req.user.fullName,
+      req.user.role,
+      requestId,
+      'request',
+      { elderlyName: request.elderlyName, type: request.type }
+    );
+
+    res.json({ message: 'تم قبول الطلب بنجاح' });
   } catch (error) {
     console.error('Accept request error:', error);
     res.status(500).json({ error: 'Failed to accept request' });
@@ -179,19 +199,28 @@ const completeRequest = async (req, res) => {
     const { hoursSpent, notes } = req.body;
     
     if (!db) {
-      return res.json({ message: 'Request completed (demo mode)' });
+      await logActivity(
+        ACTION_TYPES.REQUEST_COMPLETED,
+        req.user.uid,
+        req.user.fullName,
+        req.user.role,
+        requestId,
+        'request',
+        { hoursSpent }
+      );
+      return res.json({ message: 'تم إتمام الطلب بنجاح' });
     }
 
     const requestRef = db.collection('requests').doc(requestId);
     const requestDoc = await requestRef.get();
 
     if (!requestDoc.exists) {
-      return res.status(404).json({ error: 'Request not found' });
+      return res.status(404).json({ error: 'الطلب غير موجود' });
     }
 
     const request = requestDoc.data();
     if (request.volunteerId !== req.user.uid) {
-      return res.status(403).json({ error: 'You are not assigned to this request' });
+      return res.status(403).json({ error: 'أنت غير مخصص لهذا الطلب' });
     }
 
     // Update request status
@@ -214,7 +243,17 @@ const completeRequest = async (req, res) => {
       updatedAt: new Date().toISOString()
     });
 
-    res.json({ message: 'Request marked as completed' });
+    await logActivity(
+      ACTION_TYPES.REQUEST_COMPLETED,
+      req.user.uid,
+      req.user.fullName,
+      req.user.role,
+      requestId,
+      'request',
+      { elderlyName: request.elderlyName, type: request.type, hoursSpent }
+    );
+
+    res.json({ message: 'تم إتمام الطلب بنجاح' });
   } catch (error) {
     console.error('Complete request error:', error);
     res.status(500).json({ error: 'Failed to complete request' });

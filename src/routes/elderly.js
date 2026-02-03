@@ -11,6 +11,7 @@ const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
 const elderlyController = require('../controllers/elderlyController');
+const { createComplaint, getMyComplaints } = require('../controllers/complaintController');
 const { verifyToken, elderlyOnly } = require('../middleware/auth');
 
 // All elderly routes require authentication
@@ -67,5 +68,23 @@ router.post('/requests/:requestId/rate', [
   body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be between 1 and 5'),
   body('feedback').optional().trim().escape()
 ], elderlyController.rateVolunteer);
+
+/**
+ * POST /api/elderly/complaints
+ * File a complaint against a volunteer
+ */
+router.post('/complaints', [
+  body('targetId').notEmpty().withMessage('معرف المتطوع مطلوب'),
+  body('type').isIn(['inappropriate_behavior', 'no_show', 'poor_service', 'safety_concern', 'other'])
+    .withMessage('نوع الشكوى غير صالح'),
+  body('description').notEmpty().trim().escape()
+    .withMessage('يرجى وصف المشكلة')
+], createComplaint);
+
+/**
+ * GET /api/elderly/complaints
+ * Get my submitted complaints
+ */
+router.get('/complaints', getMyComplaints);
 
 module.exports = router;

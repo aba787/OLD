@@ -999,6 +999,155 @@ a:hover {
   max-width: 600px;
 }
 
+/* Filter Bar */
+.filter-bar {
+  margin-bottom: 1rem;
+}
+
+.filter-bar select {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background: var(--white);
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--text-color);
+  cursor: pointer;
+  min-width: 200px;
+}
+
+.filter-bar select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+/* Activity Log Items */
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--white);
+  border-radius: var(--radius);
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--border-color);
+}
+
+.activity-icon {
+  font-size: 1.5rem;
+  min-width: 40px;
+  text-align: center;
+}
+
+.activity-content {
+  flex: 1;
+}
+
+.activity-content strong {
+  color: var(--primary-color);
+}
+
+.activity-content small {
+  color: var(--text-light);
+}
+
+.activity-time {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+/* Complaint Items */
+.complaint-item {
+  padding: 1.25rem;
+  background: var(--white);
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-color);
+  border-right: 4px solid var(--warning-color);
+}
+
+.complaint-item.status-pending {
+  border-right-color: var(--warning-color);
+}
+
+.complaint-item.status-under_review {
+  border-right-color: var(--primary-color);
+}
+
+.complaint-item.status-resolved {
+  border-right-color: var(--success-color);
+}
+
+.complaint-item.status-dismissed {
+  border-right-color: var(--text-muted);
+}
+
+.complaint-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.complaint-type {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.complaint-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  background: var(--bg-alt);
+  color: var(--text-light);
+}
+
+.complaint-description {
+  color: var(--text-color);
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+}
+
+.complaint-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-light);
+  margin-bottom: 1rem;
+}
+
+.complaint-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Verified Badge */
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.org-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  background: #e3f2fd;
+  color: #1565c0;
+  border-radius: 12px;
+  font-size: 0.75rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .navbar {
