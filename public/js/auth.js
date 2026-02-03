@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginForm = document.getElementById('login-form');
   const registerForm = document.getElementById('register-form');
   
-  // Check if user is already logged in
   if (typeof firebase !== 'undefined' && firebase.auth) {
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
@@ -25,7 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (registerForm) {
     registerForm.addEventListener('submit', handleRegister);
     
-    // Show/hide organization fields based on role selection
     const roleInputs = document.querySelectorAll('input[name="role"]');
     roleInputs.forEach(input => {
       input.addEventListener('change', (e) => {
@@ -70,24 +68,20 @@ async function handleLogin(e) {
     
     const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
-    const token = await user.getIdToken();
     
-    try {
-      await apiRequest('/api/auth/verify', {
-        method: 'POST',
-        body: JSON.stringify({ token })
-      });
-      
-      successEl.textContent = 'تم تسجيل الدخول بنجاح! جارٍ التحويل...';
-      successEl.classList.remove('hidden');
-      
-      setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 1000);
-    } catch (apiError) {
-      console.warn('Backend verification failed, continuing anyway');
-      window.location.href = '/dashboard';
+    const db = firebase.firestore();
+    const userDoc = await db.collection('users').doc(user.uid).get();
+    
+    if (!userDoc.exists) {
+      console.log('User document not found, will be created on dashboard');
     }
+    
+    successEl.textContent = 'تم تسجيل الدخول بنجاح! جارٍ التحويل...';
+    successEl.classList.remove('hidden');
+    
+    setTimeout(() => {
+      window.location.href = '/dashboard';
+    }, 1000);
     
   } catch (error) {
     console.error('Login error:', error);
@@ -120,7 +114,6 @@ async function handleLogin(e) {
 async function handleRegister(e) {
   e.preventDefault();
   
-  const form = e.target;
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
   const confirmPassword = document.getElementById('confirmPassword').value;
@@ -138,7 +131,6 @@ async function handleRegister(e) {
   errorEl.classList.add('hidden');
   successEl.classList.add('hidden');
   
-  // Validate form - التحقق من النموذج
   if (!role) {
     errorEl.textContent = 'يرجى اختيار نوع الحساب.';
     errorEl.classList.remove('hidden');
@@ -171,27 +163,98 @@ async function handleRegister(e) {
     
     await user.updateProfile({ displayName: fullName });
     
+    const db = firebase.firestore();
+    const now = new Date().toISOString();
+    const status = role === 'elderly' ? 'approved' : 'pending';
+    
     const userData = {
       uid: user.uid,
-      email,
+      email: user.email,
       fullName,
-      phone,
-      address,
-      role
+      phone: phone || '',
+      address: address || '',
+      role,
+      status,
+      createdAt: now,
+      updatedAt: now
     };
     
     if (role === 'organization') {
-      userData.organizationName = document.getElementById('organizationName').value;
-      userData.registrationNumber = document.getElementById('registrationNumber').value || '';
+      userData.organizationId = user.uid;
+    }
+    
+    await db.collection('users').doc(user.uid).set(userData);
+    console.log('Created users/' + user.uid);
+    
+    if (role === 'elderly') {
+      const elderProfile = {
+        uid: user.uid,
+        fullName,
+        phone: phone || '',
+        address: address || '',
+        emergencyContact: '',
+        specialNeeds: '',
+        createdAt: now,
+        updatedAt: now
+      };
+      await db.collection('elder_profiles').doc(user.uid).set(elderProfile);
+      console.log('Created elder_profiles/' + user.uid);
+    } else if (role === 'volunteer') {
+      const volunteerProfile = {
+        uid: user.uid,
+        fullName,
+        phone: phone || '',
+        address: address || '',
+        skills: [],
+        availability: {},
+        bio: '',
+        totalHours: 0,
+        completedRequests: 0,
+        rating: 0,
+        ratingCount: 0,
+        verified: false,
+        verifiedBy: null,
+        createdAt: now,
+        updatedAt: now
+      };
+      await db.collection('volunteer_profiles').doc(user.uid).set(volunteerProfile);
+      console.log('Created volunteer_profiles/' + user.uid);
+    } else if (role === 'organization') {
+      const orgName = document.getElementById('organizationName').value || fullName;
+      const regNumber = document.getElementById('registrationNumber').value || '';
+      
+      const orgProfile = {
+        uid: user.uid,
+        organizationName: orgName,
+        registrationNumber: regNumber,
+        email: user.email,
+        phone: phone || '',
+        address: address || '',
+        description: '',
+        website: '',
+        verifiedVolunteers: [],
+        createdAt: now,
+        updatedAt: now
+      };
+      await db.collection('organizations').doc(user.uid).set(orgProfile);
+      console.log('Created organizations/' + user.uid);
     }
     
     try {
+      const token = await user.getIdToken();
       await apiRequest('/api/auth/register', {
         method: 'POST',
-        body: JSON.stringify(userData)
+        body: JSON.stringify({
+          uid: user.uid,
+          email: user.email,
+          fullName,
+          phone,
+          address,
+          role
+        })
       });
     } catch (apiError) {
-      console.warn('Backend registration failed, continuing anyway:', apiError);
+      console.warn('Backend sync failed (profiles already in Firestore):', apiError.message);
     }
     
     let successMessage = 'تم إنشاء الحساب بنجاح!';

@@ -148,6 +148,12 @@ The server will start on port 5000.
   - Updated color palette to softer, calmer tones
   - Improved UI with cleaner shadows, better focus states, subtle hover effects
   - Added Firestore SDK to dashboard for direct database access
+- **February 2026**: Complete Data Flow Fix
+  - On signup: creates users/{uid} + role-specific profile (elder_profiles, volunteer_profiles, or organizations)
+  - On login: fetches users/{uid} first, auto-creates profile if missing
+  - Role selection screen for users without profile (instead of error)
+  - Backend updated to create both main user doc and role profile
+  - Firestore SDK added to login and register pages
 
 ## Notes
 - The application runs in demo mode if Firebase is not configured

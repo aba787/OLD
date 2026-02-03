@@ -11,66 +11,103 @@ const { validationResult } = require('express-validator');
 /**
  * Register a new user
  * Called after successful Firebase authentication on the client side
- * SECURITY: User identity is derived from verified token, not client input
+ * Creates users/{uid} AND role-specific profile
  */
 const register = async (req, res) => {
   try {
-    // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    // SECURITY: Use verified user info from token, not client-supplied data
     const uid = req.user.uid;
     const email = req.user.email;
-    const { fullName, phone, role, address } = req.body;
+    const { fullName, phone, role, address, organizationName, registrationNumber } = req.body;
 
     if (!uid || !email) {
       return res.status(400).json({ error: 'Authentication required' });
     }
 
-    // Create user document in Firestore
+    const now = new Date().toISOString();
+    const status = role === 'elderly' ? 'approved' : 'pending';
+
     const userData = {
       uid,
       email,
       fullName,
       phone: phone || '',
-      role,
       address: address || '',
-      status: role === 'elderly' ? 'approved' : 'pending', // Elderly users auto-approved
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      role,
+      status,
+      createdAt: now,
+      updatedAt: now
     };
 
-    // Add role-specific initial data
-    if (role === 'volunteer') {
-      userData.skills = [];
-      userData.availability = {};
-      userData.bio = '';
-      userData.totalHours = 0;
-      userData.completedRequests = 0;
-      userData.rating = 0;
-      userData.verified = false;
-      userData.verifiedBy = null;
-    } else if (role === 'organization') {
-      userData.organizationName = '';
-      userData.registrationNumber = '';
-      userData.website = '';
-      userData.description = '';
-      userData.verifiedVolunteers = [];
-    } else if (role === 'elderly') {
-      userData.emergencyContact = '';
-      userData.specialNeeds = '';
+    if (role === 'organization') {
+      userData.organizationId = uid;
     }
 
-    // Save to Firestore (if available)
     if (db) {
-      await db.collection('users').doc(uid).set(userData);
+      await db.collection('users').doc(uid).set(userData, { merge: true });
+      console.log(`Created/updated users/${uid}`);
+
+      if (role === 'elderly') {
+        const elderProfile = {
+          uid,
+          fullName,
+          phone: phone || '',
+          address: address || '',
+          emergencyContact: '',
+          specialNeeds: '',
+          createdAt: now,
+          updatedAt: now
+        };
+        await db.collection('elder_profiles').doc(uid).set(elderProfile, { merge: true });
+        console.log(`Created elder_profiles/${uid}`);
+      } else if (role === 'volunteer') {
+        const volunteerProfile = {
+          uid,
+          fullName,
+          phone: phone || '',
+          address: address || '',
+          skills: [],
+          availability: {},
+          bio: '',
+          totalHours: 0,
+          completedRequests: 0,
+          rating: 0,
+          ratingCount: 0,
+          verified: false,
+          verifiedBy: null,
+          createdAt: now,
+          updatedAt: now
+        };
+        await db.collection('volunteer_profiles').doc(uid).set(volunteerProfile, { merge: true });
+        console.log(`Created volunteer_profiles/${uid}`);
+      } else if (role === 'organization') {
+        const orgProfile = {
+          uid,
+          organizationName: organizationName || fullName,
+          registrationNumber: registrationNumber || '',
+          email,
+          phone: phone || '',
+          address: address || '',
+          description: '',
+          website: '',
+          verifiedVolunteers: [],
+          createdAt: now,
+          updatedAt: now
+        };
+        await db.collection('organizations').doc(uid).set(orgProfile, { merge: true });
+        console.log(`Created organizations/${uid}`);
+      }
       
-      // Set custom claims for role-based access (if auth is available)
       if (auth) {
-        await auth.setCustomUserClaims(uid, { role, status: userData.status });
+        try {
+          await auth.setCustomUserClaims(uid, { role, status });
+        } catch (claimsError) {
+          console.warn('Could not set custom claims:', claimsError.message);
+        }
       }
     }
 
@@ -81,7 +118,7 @@ const register = async (req, res) => {
         email,
         fullName,
         role,
-        status: userData.status
+        status
       }
     });
   } catch (error) {
@@ -95,7 +132,6 @@ const register = async (req, res) => {
  */
 const verifyUser = async (req, res) => {
   try {
-    // req.user is set by verifyToken middleware
     res.json({
       authenticated: true,
       user: {
@@ -121,13 +157,33 @@ const getProfile = async (req, res) => {
       const userDoc = await db.collection('users').doc(req.user.uid).get();
       if (userDoc.exists) {
         const userData = userDoc.data();
-        // Don't send sensitive fields
+        
+        let roleProfile = null;
+        const role = userData.role;
+        
+        if (role === 'elderly') {
+          const profileDoc = await db.collection('elder_profiles').doc(req.user.uid).get();
+          if (profileDoc.exists) {
+            roleProfile = profileDoc.data();
+          }
+        } else if (role === 'volunteer') {
+          const profileDoc = await db.collection('volunteer_profiles').doc(req.user.uid).get();
+          if (profileDoc.exists) {
+            roleProfile = profileDoc.data();
+          }
+        } else if (role === 'organization') {
+          const orgId = userData.organizationId || req.user.uid;
+          const profileDoc = await db.collection('organizations').doc(orgId).get();
+          if (profileDoc.exists) {
+            roleProfile = profileDoc.data();
+          }
+        }
+        
         delete userData.password;
-        return res.json(userData);
+        return res.json({ ...userData, ...roleProfile });
       }
     }
     
-    // Return basic user info if Firestore not available
     res.json(req.user);
   } catch (error) {
     console.error('Get profile error:', error);
@@ -145,21 +201,34 @@ const updateProfile = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { fullName, phone, address, emergencyContact, specialNeeds } = req.body;
+    const { fullName, phone, address, emergencyContact, specialNeeds, bio, skills } = req.body;
+    const now = new Date().toISOString();
     
     const updateData = {
-      updatedAt: new Date().toISOString()
+      updatedAt: now
     };
 
-    // Only update provided fields
     if (fullName) updateData.fullName = fullName;
     if (phone) updateData.phone = phone;
     if (address) updateData.address = address;
-    if (emergencyContact) updateData.emergencyContact = emergencyContact;
-    if (specialNeeds) updateData.specialNeeds = specialNeeds;
 
     if (db) {
       await db.collection('users').doc(req.user.uid).update(updateData);
+      
+      const userDoc = await db.collection('users').doc(req.user.uid).get();
+      const role = userDoc.exists ? userDoc.data().role : null;
+      
+      if (role === 'elderly' && (emergencyContact || specialNeeds)) {
+        const elderUpdate = { updatedAt: now };
+        if (emergencyContact) elderUpdate.emergencyContact = emergencyContact;
+        if (specialNeeds) elderUpdate.specialNeeds = specialNeeds;
+        await db.collection('elder_profiles').doc(req.user.uid).update(elderUpdate);
+      } else if (role === 'volunteer' && (bio || skills)) {
+        const volUpdate = { updatedAt: now };
+        if (bio) volUpdate.bio = bio;
+        if (skills) volUpdate.skills = skills;
+        await db.collection('volunteer_profiles').doc(req.user.uid).update(volUpdate);
+      }
     }
 
     res.json({ message: 'Profile updated successfully', updates: updateData });
@@ -174,7 +243,6 @@ const updateProfile = async (req, res) => {
  */
 const logout = async (req, res) => {
   try {
-    // Clear auth cookie if using cookies
     res.clearCookie('authToken');
     res.json({ message: 'Logged out successfully' });
   } catch (error) {

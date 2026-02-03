@@ -29,7 +29,7 @@ async function initializeDashboard() {
     
     if (user) {
       currentUser = user;
-      await loadUserProfileFromFirestore(user.uid);
+      await loadOrCreateUserProfile(user);
     } else {
       window.location.href = '/login';
     }
@@ -41,16 +41,16 @@ async function initializeDashboard() {
 }
 
 /**
- * Load user profile from Firestore - تحميل ملف المستخدم من Firestore
+ * Load or create user profile from Firestore
  */
-async function loadUserProfileFromFirestore(uid) {
+async function loadOrCreateUserProfile(user) {
   try {
     const db = firebase.firestore();
-    
-    const userDoc = await db.collection('users').doc(uid).get();
+    const userDoc = await db.collection('users').doc(user.uid).get();
     
     if (!userDoc.exists) {
-      showProfileSetupMessage();
+      console.log('User document not found, showing role selection');
+      showRoleSelectionScreen(user);
       return;
     }
     
@@ -58,31 +58,28 @@ async function loadUserProfileFromFirestore(uid) {
     currentRole = userData.role;
     
     let additionalProfile = null;
+    const roleCollection = getRoleCollection(userData.role);
     
-    if (userData.role === 'volunteer') {
+    if (roleCollection) {
+      const profileId = userData.role === 'organization' ? (userData.organizationId || user.uid) : user.uid;
       try {
-        const volDoc = await db.collection('volunteer_profiles').doc(uid).get();
-        if (volDoc.exists) {
-          additionalProfile = volDoc.data();
+        const profileDoc = await db.collection(roleCollection).doc(profileId).get();
+        if (profileDoc.exists) {
+          additionalProfile = profileDoc.data();
+        } else {
+          console.log(`Role profile not found in ${roleCollection}, creating...`);
+          additionalProfile = await createRoleProfile(db, user, userData);
         }
       } catch (e) {
-        console.warn('Could not load volunteer profile:', e);
-      }
-    } else if (userData.role === 'organization' && userData.organizationId) {
-      try {
-        const orgDoc = await db.collection('organizations').doc(userData.organizationId).get();
-        if (orgDoc.exists) {
-          additionalProfile = orgDoc.data();
-        }
-      } catch (e) {
-        console.warn('Could not load organization profile:', e);
+        console.warn('Could not load role profile:', e);
+        additionalProfile = await createRoleProfile(db, user, userData);
       }
     }
     
     userProfile = {
-      uid: uid,
-      email: currentUser.email,
-      fullName: userData.fullName || currentUser.displayName || 'مستخدم',
+      uid: user.uid,
+      email: user.email,
+      fullName: userData.fullName || user.displayName || 'مستخدم',
       role: userData.role,
       status: userData.status || 'approved',
       phone: userData.phone || '',
@@ -94,68 +91,210 @@ async function loadUserProfileFromFirestore(uid) {
     
   } catch (error) {
     console.error('Error loading profile from Firestore:', error);
-    
-    try {
-      await loadUserProfileFromBackend();
-    } catch (backendError) {
-      console.error('Backend fallback also failed:', backendError);
-      showProfileSetupMessage();
-    }
+    showRoleSelectionScreen(user);
   }
 }
 
 /**
- * Fallback: Load user profile from backend API
+ * Get the Firestore collection name for a role
  */
-async function loadUserProfileFromBackend() {
-  const profile = await apiRequest('/api/auth/profile');
-  
-  if (!profile || !profile.role) {
-    showProfileSetupMessage();
-    return;
-  }
-  
-  currentRole = profile.role;
-  userProfile = {
-    uid: currentUser.uid,
-    email: currentUser.email,
-    fullName: profile.fullName || currentUser.displayName || 'مستخدم',
-    role: profile.role,
-    status: profile.status || 'approved',
-    ...profile
+function getRoleCollection(role) {
+  const collections = {
+    'elderly': 'elder_profiles',
+    'volunteer': 'volunteer_profiles',
+    'organization': 'organizations'
   };
-  
-  displayDashboard(userProfile);
+  return collections[role] || null;
 }
 
 /**
- * Show profile setup message instead of logging out
+ * Create role-specific profile
  */
-function showProfileSetupMessage() {
+async function createRoleProfile(db, user, userData) {
+  const now = new Date().toISOString();
+  const role = userData.role;
+  let profile = {};
+  
+  if (role === 'elderly') {
+    profile = {
+      uid: user.uid,
+      fullName: userData.fullName || user.displayName || '',
+      phone: userData.phone || '',
+      address: userData.address || '',
+      emergencyContact: '',
+      specialNeeds: '',
+      createdAt: now,
+      updatedAt: now
+    };
+    await db.collection('elder_profiles').doc(user.uid).set(profile);
+    console.log('Created elder_profiles/' + user.uid);
+  } else if (role === 'volunteer') {
+    profile = {
+      uid: user.uid,
+      fullName: userData.fullName || user.displayName || '',
+      phone: userData.phone || '',
+      address: userData.address || '',
+      skills: [],
+      availability: {},
+      bio: '',
+      totalHours: 0,
+      completedRequests: 0,
+      rating: 0,
+      ratingCount: 0,
+      verified: false,
+      verifiedBy: null,
+      createdAt: now,
+      updatedAt: now
+    };
+    await db.collection('volunteer_profiles').doc(user.uid).set(profile);
+    console.log('Created volunteer_profiles/' + user.uid);
+  } else if (role === 'organization') {
+    const orgId = userData.organizationId || user.uid;
+    profile = {
+      uid: user.uid,
+      organizationName: userData.organizationName || userData.fullName || '',
+      registrationNumber: userData.registrationNumber || '',
+      email: user.email,
+      phone: userData.phone || '',
+      address: userData.address || '',
+      description: '',
+      website: '',
+      verifiedVolunteers: [],
+      createdAt: now,
+      updatedAt: now
+    };
+    await db.collection('organizations').doc(orgId).set(profile);
+    console.log('Created organizations/' + orgId);
+  }
+  
+  return profile;
+}
+
+/**
+ * Show role selection screen for users without profile
+ */
+function showRoleSelectionScreen(user) {
   document.getElementById('loading-screen').classList.add('hidden');
   
   const mainContent = document.querySelector('.dashboard-main');
   if (mainContent) {
     mainContent.innerHTML = `
-      <div class="dashboard-section" style="text-align: center; padding: 3rem;">
-        <div style="font-size: 4rem; margin-bottom: 1rem;">👤</div>
+      <div class="dashboard-section" style="text-align: center; padding: 2rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">👋</div>
         <h3 style="margin-bottom: 1rem; color: var(--primary-color);">مرحباً بك في رعاية!</h3>
-        <p style="margin-bottom: 1.5rem; color: var(--text-light);">
-          يبدو أن ملفك الشخصي غير مكتمل أو لم يتم إنشاؤه بعد.
-          <br>
-          يرجى التواصل مع المشرف أو إعادة التسجيل.
+        <p style="margin-bottom: 2rem; color: var(--text-light);">
+          يرجى اختيار نوع حسابك للمتابعة:
         </p>
-        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-          <a href="/register" class="btn btn-primary">إنشاء حساب جديد</a>
+        
+        <div class="role-selector" style="max-width: 600px; margin: 0 auto 2rem;">
+          <label class="role-option" style="cursor: pointer;">
+            <input type="radio" name="setup-role" value="elderly" style="display: none;">
+            <span class="role-card" style="display: block; padding: 1.5rem; border: 2px solid #e0e0e0; border-radius: 12px; margin-bottom: 1rem; transition: all 0.2s;">
+              <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">👴</span>
+              <span style="font-size: 1.2rem; font-weight: 600; display: block;">مستخدم مسن</span>
+              <span style="color: var(--text-light); font-size: 0.9rem;">أحتاج مساعدة في المهام اليومية</span>
+            </span>
+          </label>
+          
+          <label class="role-option" style="cursor: pointer;">
+            <input type="radio" name="setup-role" value="volunteer" style="display: none;">
+            <span class="role-card" style="display: block; padding: 1.5rem; border: 2px solid #e0e0e0; border-radius: 12px; margin-bottom: 1rem; transition: all 0.2s;">
+              <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">🙌</span>
+              <span style="font-size: 1.2rem; font-weight: 600; display: block;">متطوع</span>
+              <span style="color: var(--text-light); font-size: 0.9rem;">أريد مساعدة الآخرين</span>
+            </span>
+          </label>
+          
+          <label class="role-option" style="cursor: pointer;">
+            <input type="radio" name="setup-role" value="organization" style="display: none;">
+            <span class="role-card" style="display: block; padding: 1.5rem; border: 2px solid #e0e0e0; border-radius: 12px; margin-bottom: 1rem; transition: all 0.2s;">
+              <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">🏢</span>
+              <span style="font-size: 1.2rem; font-weight: 600; display: block;">منظمة</span>
+              <span style="color: var(--text-light); font-size: 0.9rem;">جمعية خيرية أو منظمة غير ربحية</span>
+            </span>
+          </label>
+        </div>
+        
+        <button id="complete-setup-btn" class="btn btn-primary btn-lg" style="padding: 1rem 3rem; font-size: 1.1rem;" disabled>
+          متابعة
+        </button>
+        
+        <div style="margin-top: 2rem;">
           <button onclick="handleLogout()" class="btn btn-outline">تسجيل الخروج</button>
         </div>
       </div>
     `;
+    
+    const roleOptions = mainContent.querySelectorAll('input[name="setup-role"]');
+    const completeBtn = document.getElementById('complete-setup-btn');
+    
+    roleOptions.forEach(option => {
+      option.addEventListener('change', (e) => {
+        mainContent.querySelectorAll('.role-card').forEach(card => {
+          card.style.borderColor = '#e0e0e0';
+          card.style.background = 'white';
+        });
+        
+        e.target.closest('.role-option').querySelector('.role-card').style.borderColor = 'var(--primary-color)';
+        e.target.closest('.role-option').querySelector('.role-card').style.background = 'var(--bg-alt)';
+        
+        completeBtn.disabled = false;
+      });
+    });
+    
+    completeBtn.addEventListener('click', async () => {
+      const selectedRole = mainContent.querySelector('input[name="setup-role"]:checked')?.value;
+      if (selectedRole) {
+        await completeProfileSetup(user, selectedRole);
+      }
+    });
   }
   
-  document.getElementById('user-info').textContent = `مرحباً، ${currentUser.displayName || currentUser.email}`;
+  document.getElementById('user-info').textContent = `مرحباً، ${user.displayName || user.email}`;
   document.getElementById('role-title').textContent = 'إعداد الحساب';
   document.getElementById('status-badge').classList.add('hidden');
+}
+
+/**
+ * Complete profile setup
+ */
+async function completeProfileSetup(user, role) {
+  try {
+    const db = firebase.firestore();
+    const now = new Date().toISOString();
+    const status = role === 'elderly' ? 'approved' : 'pending';
+    
+    const userData = {
+      uid: user.uid,
+      email: user.email,
+      fullName: user.displayName || 'مستخدم',
+      phone: '',
+      address: '',
+      role,
+      status,
+      createdAt: now,
+      updatedAt: now
+    };
+    
+    if (role === 'organization') {
+      userData.organizationId = user.uid;
+    }
+    
+    await db.collection('users').doc(user.uid).set(userData);
+    console.log('Created users/' + user.uid);
+    
+    await createRoleProfile(db, user, userData);
+    
+    showToast('تم إنشاء الحساب بنجاح!', 'success');
+    
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+    
+  } catch (error) {
+    console.error('Error completing profile setup:', error);
+    showToast('حدث خطأ أثناء إعداد الحساب. يرجى المحاولة مرة أخرى.', 'error');
+  }
 }
 
 /**
@@ -245,7 +384,7 @@ function setupSidebar(role) {
       navItems.push(
         { href: '#available', text: 'الطلبات المتاحة', icon: '📖' },
         { href: '#my-requests', text: 'طلباتي', icon: '📋' },
-        { href: '#hours', text: 'تسجيل الساعات', icon: '⏰' },
+        { href: '#hours', text: 'ساعات التطوع', icon: '⏰' },
         { href: '#profile', text: 'ملفي الشخصي', icon: '👤' }
       );
       break;
@@ -405,7 +544,7 @@ async function loadVolunteerDashboard(profile) {
   document.getElementById('vol-total-hours').textContent = profile.totalHours || '٠';
   document.getElementById('vol-completed').textContent = profile.completedRequests || '٠';
   document.getElementById('vol-rating').textContent = profile.rating ? profile.rating.toFixed(1) : 'غير متاح';
-  document.getElementById('vol-status').textContent = profile.verified ? 'معتمد' : 'غير معتمد';
+  document.getElementById('vol-status').textContent = profile.verified ? 'معتمد ✓' : 'غير معتمد';
   
   try {
     const requestsData = await apiRequest('/api/volunteer/requests');
@@ -682,13 +821,13 @@ async function loadOrganizationDashboard(profile) {
 }
 
 /**
- * Display organization's volunteers - عرض متطوعي المنظمة
+ * Display organization's verified volunteers
  */
 function displayOrgVolunteers(volunteers) {
   const container = document.getElementById('org-volunteers-list');
   
   if (!volunteers.length) {
-    container.innerHTML = '<p class="empty-state">لا يوجد متطوعون معتمدون بعد</p>';
+    container.innerHTML = '<p class="empty-state">لا يوجد متطوعون معتمدون</p>';
     return;
   }
   
@@ -696,17 +835,15 @@ function displayOrgVolunteers(volunteers) {
     <div class="user-item">
       <div class="user-item-info">
         <h4>${vol.fullName}</h4>
-        <p>${vol.email}</p>
+        <p>${vol.email} - ${vol.totalHours || 0} ساعة تطوع</p>
       </div>
-      <div class="user-item-actions">
-        <button class="btn btn-outline btn-small" onclick="removeVerification('${vol.uid}')">إزالة</button>
-      </div>
+      <span class="badge badge-success">معتمد ✓</span>
     </div>
   `).join('');
 }
 
 /**
- * Handle organization profile update - تحديث ملف المنظمة
+ * Handle organization profile update
  */
 async function handleUpdateOrgProfile(e) {
   e.preventDefault();
@@ -723,24 +860,9 @@ async function handleUpdateOrgProfile(e) {
       method: 'PUT',
       body: JSON.stringify(data)
     });
-    showToast('تم تحديث الملف بنجاح!', 'success');
+    showToast('تم تحديث ملف المنظمة بنجاح!', 'success');
   } catch (error) {
     showToast('فشل تحديث الملف: ' + error.message, 'error');
-  }
-}
-
-/**
- * Remove volunteer verification - إزالة اعتماد متطوع
- */
-async function removeVerification(volunteerId) {
-  if (!confirm('هل أنت متأكد من إزالة اعتماد هذا المتطوع؟')) return;
-  
-  try {
-    await apiRequest(`/api/organization/volunteers/${volunteerId}`, { method: 'DELETE' });
-    showToast('تم إزالة الاعتماد.', 'success');
-    loadOrganizationDashboard(userProfile);
-  } catch (error) {
-    showToast('فشلت الإزالة: ' + error.message, 'error');
   }
 }
 
@@ -750,17 +872,10 @@ async function removeVerification(volunteerId) {
 async function handleLogout() {
   try {
     await firebase.auth().signOut();
-    
-    try {
-      await apiRequest('/api/auth/logout', { method: 'POST' });
-    } catch (error) {
-      console.warn('Backend logout failed:', error);
-    }
-    
-    window.location.href = '/';
+    window.location.href = '/login';
   } catch (error) {
     console.error('Logout error:', error);
-    showToast('فشل تسجيل الخروج. حاول مرة أخرى.', 'error');
+    showToast('فشل تسجيل الخروج', 'error');
   }
 }
 
@@ -769,10 +884,10 @@ async function handleLogout() {
  */
 function formatRequestType(type) {
   const types = {
-    shopping: 'مساعدة التسوق',
-    hospital: 'زيارة المستشفى',
-    paperwork: 'مساعدة الأوراق',
-    companionship: 'المرافقة',
+    shopping: 'تسوق 🛒',
+    hospital: 'زيارة مستشفى 🏥',
+    paperwork: 'أوراق رسمية 📄',
+    companionship: 'مرافقة 💬',
     other: 'أخرى'
   };
   return types[type] || type;
@@ -782,12 +897,12 @@ function formatRequestType(type) {
  * Format urgency - تنسيق الاستعجال
  */
 function formatUrgency(urgency) {
-  const urgencies = {
-    low: 'منخفض',
+  const levels = {
+    low: 'غير مستعجل',
     medium: 'متوسط',
-    high: 'عاجل'
+    high: 'عاجل 🔴'
   };
-  return urgencies[urgency] || urgency;
+  return levels[urgency] || urgency;
 }
 
 /**
@@ -796,8 +911,8 @@ function formatUrgency(urgency) {
 function formatStatus(status) {
   const statuses = {
     pending: 'في الانتظار',
-    assigned: 'قيد التنفيذ',
-    completed: 'مكتمل',
+    assigned: 'تم التعيين',
+    completed: 'مكتمل ✓',
     cancelled: 'ملغي'
   };
   return statuses[status] || status;
@@ -806,26 +921,16 @@ function formatStatus(status) {
 /**
  * Format date - تنسيق التاريخ
  */
-function formatDate(dateString) {
-  if (!dateString) return '';
+function formatDate(dateStr) {
+  if (!dateStr) return '';
   try {
-    return new Date(dateString).toLocaleDateString('ar-SA', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('ar-SA', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
     });
-  } catch (e) {
-    return dateString;
-  }
-}
-
-/**
- * Show toast notification
- */
-function showToast(message, type = 'info') {
-  if (typeof window.showToast === 'function') {
-    window.showToast(message, type);
-  } else {
-    alert(message);
+  } catch {
+    return dateStr;
   }
 }
