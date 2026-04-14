@@ -29,7 +29,8 @@ const register = async (req, res) => {
     }
 
     const now = new Date().toISOString();
-    const status = role === 'elderly' ? 'approved' : 'pending';
+    const autoApprovedEmails = ['reemalomrani5@gmail.com'];
+    const status = (role === 'elderly' || autoApprovedEmails.includes(email.toLowerCase())) ? 'approved' : 'pending';
 
     const userData = {
       uid,
