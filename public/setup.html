@@ -53,6 +53,8 @@
     .btn-admin:hover { background: #235555; }
     .btn-org { background: #4a90d9; color: white; }
     .btn-org:hover { background: #3a7bc8; }
+    .btn-vol { background: #8e44ad; color: white; }
+    .btn-vol:hover { background: #7d3c98; }
     .btn:disabled { opacity: 0.6; cursor: not-allowed; }
     .btn-all { background: #27ae60; color: white; margin-top: 0; }
     .btn-all:hover { background: #229954; }
@@ -119,6 +121,24 @@
     </div>
     <button class="btn btn-org" id="btn-org" onclick="createOrg()">إنشاء حساب المنظمة</button>
     <div id="org-status" class="status-box"></div>
+  </div>
+
+  <div class="account-card">
+    <h3>🙋 حساب المتطوع (Volunteer)</h3>
+    <div class="info-row">
+      <span class="info-label">الإيميل:</span>
+      <span class="info-value">volunteer@careconnect.com</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">الباسورد:</span>
+      <span class="info-value">Vol@123456</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">الدور:</span>
+      <span class="info-value">متطوع (مفعّل مباشرة)</span>
+    </div>
+    <button class="btn btn-vol" id="btn-vol" onclick="createVolunteer()">إنشاء حساب المتطوع</button>
+    <div id="vol-status" class="status-box"></div>
   </div>
 </div>
 
@@ -244,6 +264,70 @@
     }
   }
 
+  async function createVolunteer() {
+    const btn = document.getElementById('btn-vol');
+    btn.disabled = true;
+    btn.textContent = 'جارٍ الإنشاء...';
+    showStatus('vol-status', 'جارٍ إنشاء حساب المتطوع...', 'info');
+
+    try {
+      const db = firebase.firestore();
+      const email = 'volunteer@careconnect.com';
+      const password = 'Vol@123456';
+      const now = new Date().toISOString();
+
+      let uid;
+      try {
+        const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        uid = cred.user.uid;
+        await cred.user.updateProfile({ displayName: 'متطوع تجريبي' });
+      } catch (e) {
+        if (e.code === 'auth/email-already-in-use') {
+          const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
+          uid = cred.user.uid;
+        } else throw e;
+      }
+
+      await db.collection('users').doc(uid).set({
+        uid,
+        email,
+        fullName: 'متطوع تجريبي',
+        role: 'volunteer',
+        status: 'approved',
+        phone: '',
+        address: '',
+        createdAt: now,
+        updatedAt: now
+      }, { merge: true });
+
+      await db.collection('volunteer_profiles').doc(uid).set({
+        uid,
+        fullName: 'متطوع تجريبي',
+        phone: '',
+        address: '',
+        skills: [],
+        availability: {},
+        bio: '',
+        totalHours: 0,
+        completedRequests: 0,
+        rating: 0,
+        ratingCount: 0,
+        verified: false,
+        verifiedBy: null,
+        createdAt: now,
+        updatedAt: now
+      }, { merge: true });
+
+      await firebase.auth().signOut();
+      showStatus('vol-status', '✅ تم إنشاء حساب المتطوع بنجاح!', 'success');
+      btn.textContent = '✅ تم الإنشاء';
+    } catch (err) {
+      showStatus('vol-status', '❌ خطأ: ' + err.message, 'error');
+      btn.disabled = false;
+      btn.textContent = 'إنشاء حساب المتطوع';
+    }
+  }
+
   async function createAll() {
     const btn = document.querySelector('.btn-all');
     btn.disabled = true;
@@ -251,6 +335,7 @@
     showStatus('all-status', 'جارٍ إنشاء الحسابات...', 'info');
     await createAdmin();
     await createOrg();
+    await createVolunteer();
     showStatus('all-status', '✅ تم إنشاء جميع الحسابات بنجاح! يمكنك الآن تسجيل الدخول.', 'success');
     btn.textContent = '✅ تم إنشاء جميع الحسابات';
   }
