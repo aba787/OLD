@@ -507,7 +507,8 @@ function setupSidebar(role) {
     case 'organization':
       navItems.push(
         { id: 'overview', text: 'نظرة عامة', icon: '🏢' },
-        { id: 'volunteers', text: 'المتطوعون', icon: '👥' },
+        { id: 'pending-volunteers', text: 'قبول المتطوعين', icon: '✅' },
+        { id: 'volunteers', text: 'المعتمدون', icon: '👥' },
         { id: 'profile', text: 'ملف المنظمة', icon: '👤' }
       );
       break;
@@ -599,7 +600,8 @@ function navigateToSection(role, sectionId) {
   } else if (role === 'organization') {
     const sectionsMap = {
       'overview': dashboard.querySelector('.stats-grid'),
-      'volunteers': dashboard.querySelectorAll('.dashboard-section')[1],
+      'pending-volunteers': document.getElementById('org-unverified-list')?.closest('.dashboard-section'),
+      'volunteers': document.getElementById('org-volunteers-list')?.closest('.dashboard-section'),
       'profile': dashboard.querySelectorAll('.dashboard-section')[0]
     };
     
@@ -1476,33 +1478,30 @@ async function loadOrganizationDashboard(profile) {
   
   try {
     const db = firebase.firestore();
-    const volSnap = await db.collection('volunteer_profiles').where('verified', '==', true).get();
-    const volunteers = [];
-    const volUids = [];
-    volSnap.forEach(doc => volUids.push(doc.id));
 
-    for (const uid of volUids) {
-      const userDoc = await db.collection('users').doc(uid).get();
-      if (userDoc.exists) {
-        const volData = volSnap.docs.find(d => d.id === uid)?.data() || {};
-        volunteers.push({ ...userDoc.data(), ...volData });
-      }
-    }
+    // Get this org's verified volunteers list from the org document
+    const orgDoc = await db.collection('organizations').doc(currentUser.uid).get();
+    const verifiedIds = orgDoc.exists ? (orgDoc.data().verifiedVolunteers || []) : [];
 
-    document.getElementById('org-verified').textContent = volunteers.length;
-    displayOrgVolunteers(volunteers);
+    // Get ALL volunteers
+    const usersSnap = await db.collection('users').where('role', '==', 'volunteer').get();
+    const allVolunteers = [];
+    usersSnap.forEach(doc => allVolunteers.push(doc.data()));
+
+    const verifiedVols = allVolunteers.filter(v => verifiedIds.includes(v.uid));
+    const unverifiedVols = allVolunteers.filter(v => !verifiedIds.includes(v.uid));
+
+    document.getElementById('org-verified').textContent = verifiedVols.length;
+    document.getElementById('org-pending-verifications').textContent = unverifiedVols.length;
+
+    displayOrgVolunteers(verifiedVols);
+    displayUnverifiedVolunteers(unverifiedVols);
   } catch (error) {
     console.error('Error loading volunteers:', error);
     document.getElementById('org-verified').textContent = '٠';
-    displayOrgVolunteers([]);
-  }
-
-  try {
-    const db = firebase.firestore();
-    const pendingSnap = await db.collection('volunteer_profiles').where('verified', '==', false).get();
-    document.getElementById('org-pending-verifications').textContent = pendingSnap.size;
-  } catch (error) {
     document.getElementById('org-pending-verifications').textContent = '٠';
+    displayOrgVolunteers([]);
+    displayUnverifiedVolunteers([]);
   }
 }
 
@@ -1526,6 +1525,42 @@ function displayOrgVolunteers(volunteers) {
       <span class="badge badge-success">معتمد ✓</span>
     </div>
   `).join('');
+}
+
+function displayUnverifiedVolunteers(volunteers) {
+  const container = document.getElementById('org-unverified-list');
+  if (!container) return;
+
+  if (!volunteers.length) {
+    container.innerHTML = '<p class="empty-state">لا يوجد متطوعون في انتظار القبول</p>';
+    return;
+  }
+
+  container.innerHTML = volunteers.map(vol => `
+    <div class="user-item">
+      <div class="user-item-info">
+        <h4>${vol.fullName || 'متطوع'}</h4>
+        <p>${vol.email}</p>
+      </div>
+      <div class="user-item-actions">
+        <button class="btn btn-success btn-small" onclick="verifyVolunteerByOrg('${vol.uid}', '${(vol.fullName || '').replace(/'/g, '')}')">قبول ✓</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function verifyVolunteerByOrg(volunteerId, volunteerName) {
+  try {
+    const db = firebase.firestore();
+    await db.collection('organizations').doc(currentUser.uid).update({
+      verifiedVolunteers: firebase.firestore.FieldValue.arrayUnion(volunteerId),
+      updatedAt: new Date().toISOString()
+    });
+    showToast(`تم قبول المتطوع ${volunteerName} بنجاح ✓`, 'success');
+    loadOrganizationDashboard(userProfile);
+  } catch (error) {
+    showToast('فشل قبول المتطوع: ' + error.message, 'error');
+  }
 }
 
 /**
