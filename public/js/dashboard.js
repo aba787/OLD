@@ -301,7 +301,7 @@ async function completeProfileSetup(user, role) {
       if (typeof firebase !== 'undefined' && firebase.firestore) {
         const db = firebase.firestore();
         const now = new Date().toISOString();
-        const status = role === 'elderly' ? 'approved' : 'pending';
+        const status = 'approved';
         
         const userData = {
           uid: user.uid,

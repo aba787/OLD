@@ -165,7 +165,7 @@ async function handleRegister(e) {
     
     const db = firebase.firestore();
     const now = new Date().toISOString();
-    const status = role === 'elderly' ? 'approved' : 'pending';
+    const status = 'approved';
     
     const userData = {
       uid: user.uid,
@@ -257,11 +257,7 @@ async function handleRegister(e) {
       console.warn('Backend sync failed (profiles already in Firestore):', apiError.message);
     }
     
-    let successMessage = 'تم إنشاء الحساب بنجاح!';
-    if (role === 'volunteer' || role === 'organization') {
-      successMessage += ' حسابك في انتظار موافقة المشرف.';
-    }
-    successMessage += ' جارٍ التحويل...';
+    let successMessage = 'تم إنشاء الحساب بنجاح! جارٍ التحويل...';
     
     successEl.textContent = successMessage;
     successEl.classList.remove('hidden');
