@@ -670,28 +670,65 @@ function showDashboard(role, profile) {
  */
 async function loadAdminDashboard() {
   try {
-    const stats = await apiRequest('/api/admin/stats');
-    
-    document.getElementById('stat-total-users').textContent = stats.totalUsers || 0;
-    document.getElementById('stat-pending').textContent = stats.pendingApprovals || 0;
-    document.getElementById('stat-volunteers').textContent = stats.totalVolunteers || 0;
-    document.getElementById('stat-requests').textContent = stats.totalRequests || 0;
-    
-    const pendingData = await apiRequest('/api/admin/users/pending');
-    displayPendingUsers(pendingData.users || []);
-    
+    const db = firebase.firestore();
+
+    const usersSnap = await db.collection('users').get();
+    const allUsers = [];
+    usersSnap.forEach(doc => allUsers.push(doc.data()));
+
+    const pendingUsers = allUsers.filter(u => u.status === 'pending');
+    const volunteers = allUsers.filter(u => u.role === 'volunteer');
+
+    let totalRequests = 0;
+    try {
+      const reqSnap = await db.collection('requests').get();
+      totalRequests = reqSnap.size;
+    } catch (e) {}
+
+    document.getElementById('stat-total-users').textContent = allUsers.length;
+    document.getElementById('stat-pending').textContent = pendingUsers.length;
+    document.getElementById('stat-volunteers').textContent = volunteers.length;
+    document.getElementById('stat-requests').textContent = totalRequests;
+
+    displayPendingUsers(pendingUsers);
+    displayAllUsers(allUsers);
     loadActivityLogs();
     loadComplaints();
-    
+
   } catch (error) {
     console.error('Error loading admin dashboard:', error);
     document.getElementById('stat-total-users').textContent = '٠';
     document.getElementById('stat-pending').textContent = '٠';
     document.getElementById('stat-volunteers').textContent = '٠';
     document.getElementById('stat-requests').textContent = '٠';
-    
     displayPendingUsers([]);
+    displayAllUsers([]);
   }
+}
+
+function displayAllUsers(users) {
+  const container = document.getElementById('all-users-list');
+  if (!container) return;
+
+  if (!users.length) {
+    container.innerHTML = '<p class="empty-state">لا يوجد مستخدمون مسجلون</p>';
+    return;
+  }
+
+  const statusLabel = { approved: 'مفعّل', pending: 'انتظار', rejected: 'مرفوض', suspended: 'موقوف' };
+  const statusColor = { approved: '#27ae60', pending: '#f39c12', rejected: '#e74c3c', suspended: '#95a5a6' };
+
+  container.innerHTML = users.map(user => `
+    <div class="user-item">
+      <div class="user-item-info">
+        <h4>${user.fullName || 'مستخدم'}</h4>
+        <p>${user.email} - ${getRoleArabic(user.role)}</p>
+      </div>
+      <span style="font-size:0.85rem; font-weight:600; color:${statusColor[user.status] || '#666'}">
+        ${statusLabel[user.status] || user.status}
+      </span>
+    </div>
+  `).join('');
 }
 
 async function loadActivityLogs() {
@@ -909,7 +946,13 @@ function getRoleArabic(role) {
  */
 async function approveUser(userId) {
   try {
-    await apiRequest(`/api/admin/users/${userId}/approve`, { method: 'PUT' });
+    const db = firebase.firestore();
+    await db.collection('users').doc(userId).update({
+      status: 'approved',
+      approvedBy: currentUser.uid,
+      approvedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
     showToast('تمت الموافقة على المستخدم بنجاح!', 'success');
     loadAdminDashboard();
   } catch (error) {
@@ -923,9 +966,13 @@ async function approveUser(userId) {
 async function rejectUser(userId) {
   const reason = prompt('أدخل سبب الرفض (اختياري):');
   try {
-    await apiRequest(`/api/admin/users/${userId}/reject`, { 
-      method: 'PUT',
-      body: JSON.stringify({ reason })
+    const db = firebase.firestore();
+    await db.collection('users').doc(userId).update({
+      status: 'rejected',
+      rejectedBy: currentUser.uid,
+      rejectedAt: new Date().toISOString(),
+      rejectionReason: reason || '',
+      updatedAt: new Date().toISOString()
     });
     showToast('تم رفض المستخدم.', 'success');
     loadAdminDashboard();
@@ -951,16 +998,22 @@ async function loadVolunteerDashboard(profile) {
   loadVolunteerProfile(profile);
   
   try {
-    const requestsData = await apiRequest('/api/volunteer/requests');
-    displayAvailableRequests(requestsData.requests || []);
+    const db = firebase.firestore();
+    const reqSnap = await db.collection('requests').where('status', '==', 'pending').get();
+    const requests = [];
+    reqSnap.forEach(doc => requests.push({ id: doc.id, ...doc.data() }));
+    displayAvailableRequests(requests);
   } catch (error) {
     console.error('Error loading requests:', error);
     displayAvailableRequests([]);
   }
-  
+
   try {
-    const myRequestsData = await apiRequest('/api/volunteer/my-requests');
-    displayMyActiveRequests(myRequestsData.requests || []);
+    const db = firebase.firestore();
+    const mySnap = await db.collection('requests').where('volunteerId', '==', currentUser.uid).get();
+    const myRequests = [];
+    mySnap.forEach(doc => myRequests.push({ id: doc.id, ...doc.data() }));
+    displayMyActiveRequests(myRequests);
   } catch (error) {
     console.error('Error loading my requests:', error);
     displayMyActiveRequests([]);
@@ -1099,8 +1152,15 @@ function displayMyActiveRequests(requests) {
  */
 async function acceptRequest(requestId) {
   try {
-    await apiRequest(`/api/volunteer/requests/${requestId}/accept`, { method: 'POST' });
-    showToast('تم قبول الطلب! ستتم مشاركة تفاصيل التواصل.', 'success');
+    const db = firebase.firestore();
+    await db.collection('requests').doc(requestId).update({
+      status: 'assigned',
+      volunteerId: currentUser.uid,
+      volunteerName: userProfile.fullName || 'متطوع',
+      assignedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+    showToast('تم قبول الطلب!', 'success');
     loadVolunteerDashboard(userProfile);
   } catch (error) {
     showToast('فشل قبول الطلب: ' + error.message, 'error');
@@ -1113,12 +1173,26 @@ async function acceptRequest(requestId) {
 async function completeRequest(requestId) {
   const hours = prompt('كم ساعة قضيت؟');
   if (!hours) return;
-  
+
   try {
-    await apiRequest(`/api/volunteer/requests/${requestId}/complete`, { 
-      method: 'POST',
-      body: JSON.stringify({ hoursSpent: parseFloat(hours), notes: '' })
+    const db = firebase.firestore();
+    await db.collection('requests').doc(requestId).update({
+      status: 'completed',
+      hoursSpent: parseFloat(hours),
+      completedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     });
+
+    const volDoc = db.collection('volunteer_profiles').doc(currentUser.uid);
+    const volSnap = await volDoc.get();
+    const currentHours = volSnap.exists ? (volSnap.data().totalHours || 0) : 0;
+    const currentCompleted = volSnap.exists ? (volSnap.data().completedRequests || 0) : 0;
+    await volDoc.update({
+      totalHours: currentHours + parseFloat(hours),
+      completedRequests: currentCompleted + 1,
+      updatedAt: new Date().toISOString()
+    });
+
     showToast('تم إتمام الطلب. شكراً لتطوعك!', 'success');
     loadVolunteerDashboard(userProfile);
   } catch (error) {
@@ -1131,9 +1205,12 @@ async function completeRequest(requestId) {
  */
 async function loadElderlyDashboard() {
   try {
-    const requestsData = await apiRequest('/api/elderly/requests');
-    displayElderlyRequests(requestsData.requests || []);
-    loadComplaintTargets(requestsData.requests || []);
+    const db = firebase.firestore();
+    const snap = await db.collection('requests').where('elderlyId', '==', currentUser.uid).get();
+    const requests = [];
+    snap.forEach(doc => requests.push({ id: doc.id, ...doc.data() }));
+    displayElderlyRequests(requests);
+    loadComplaintTargets(requests);
     loadMyComplaints();
     setupComplaintForm();
   } catch (error) {
@@ -1318,15 +1395,19 @@ async function handleCreateRequest(e) {
     description: formData.get('description'),
     urgency: formData.get('urgency'),
     preferredDate: formData.get('preferredDate') || null,
-    address: formData.get('address') || ''
+    address: formData.get('address') || '',
+    elderlyId: currentUser.uid,
+    elderlyName: userProfile.fullName || 'مستخدم',
+    status: 'pending',
+    volunteerId: null,
+    volunteerName: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   };
   
   try {
-    await apiRequest('/api/elderly/requests', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-    
+    const db = firebase.firestore();
+    await db.collection('requests').add(data);
     showToast('تم إرسال طلب المساعدة بنجاح!', 'success');
     closeModal();
     loadElderlyDashboard();
@@ -1348,9 +1429,12 @@ async function rateVolunteer(requestId) {
   const feedback = prompt('أي ملاحظات؟ (اختياري)');
   
   try {
-    await apiRequest(`/api/elderly/requests/${requestId}/rate`, {
-      method: 'POST',
-      body: JSON.stringify({ rating: parseInt(rating), feedback: feedback || '' })
+    const db = firebase.firestore();
+    await db.collection('requests').doc(requestId).update({
+      rating: parseInt(rating),
+      feedback: feedback || '',
+      ratedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     });
     showToast('شكراً على تقييمك!', 'success');
     loadElderlyDashboard();
@@ -1366,7 +1450,11 @@ async function cancelRequest(requestId) {
   if (!confirm('هل أنت متأكد من إلغاء هذا الطلب؟')) return;
   
   try {
-    await apiRequest(`/api/elderly/requests/${requestId}`, { method: 'DELETE' });
+    const db = firebase.firestore();
+    await db.collection('requests').doc(requestId).update({
+      status: 'cancelled',
+      updatedAt: new Date().toISOString()
+    });
     showToast('تم إلغاء الطلب.', 'success');
     loadElderlyDashboard();
   } catch (error) {
@@ -1387,18 +1475,32 @@ async function loadOrganizationDashboard(profile) {
   document.getElementById('org-desc').value = profile.description || '';
   
   try {
-    const volunteersData = await apiRequest('/api/organization/volunteers');
-    document.getElementById('org-verified').textContent = volunteersData.count || 0;
-    displayOrgVolunteers(volunteersData.volunteers || []);
+    const db = firebase.firestore();
+    const volSnap = await db.collection('volunteer_profiles').where('verified', '==', true).get();
+    const volunteers = [];
+    const volUids = [];
+    volSnap.forEach(doc => volUids.push(doc.id));
+
+    for (const uid of volUids) {
+      const userDoc = await db.collection('users').doc(uid).get();
+      if (userDoc.exists) {
+        const volData = volSnap.docs.find(d => d.id === uid)?.data() || {};
+        volunteers.push({ ...userDoc.data(), ...volData });
+      }
+    }
+
+    document.getElementById('org-verified').textContent = volunteers.length;
+    displayOrgVolunteers(volunteers);
   } catch (error) {
     console.error('Error loading volunteers:', error);
     document.getElementById('org-verified').textContent = '٠';
     displayOrgVolunteers([]);
   }
-  
+
   try {
-    const pendingData = await apiRequest('/api/organization/volunteers/pending');
-    document.getElementById('org-pending-verifications').textContent = pendingData.count || 0;
+    const db = firebase.firestore();
+    const pendingSnap = await db.collection('volunteer_profiles').where('verified', '==', false).get();
+    document.getElementById('org-pending-verifications').textContent = pendingSnap.size;
   } catch (error) {
     document.getElementById('org-pending-verifications').textContent = '٠';
   }
