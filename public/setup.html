@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إعداد حسابات التجربة - رعاية</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+    }
+    h1 { font-size: 1.6rem; color: #2d6a6a; margin-bottom: 8px; text-align: center; }
+    .subtitle { color: #666; text-align: center; margin-bottom: 32px; font-size: 0.9rem; }
+    .account-card {
+      border: 2px solid #e8f4f4;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .account-card h3 { color: #2d6a6a; margin-bottom: 12px; font-size: 1.1rem; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; }
+    .info-label { color: #666; }
+    .info-value { font-weight: 600; color: #333; direction: ltr; }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-family: 'Cairo', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 12px;
+      transition: all 0.2s;
+    }
+    .btn-admin { background: #2d6a6a; color: white; }
+    .btn-admin:hover { background: #235555; }
+    .btn-org { background: #4a90d9; color: white; }
+    .btn-org:hover { background: #3a7bc8; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-all { background: #27ae60; color: white; margin-top: 0; }
+    .btn-all:hover { background: #229954; }
+    .status-box {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-top: 10px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .status-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .status-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .status-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    .divider { border: none; border-top: 2px dashed #e8f4f4; margin: 24px 0; }
+    .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; border-radius: 8px; padding: 12px 16px; font-size: 0.85rem; margin-bottom: 24px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🔧 إعداد حسابات التجربة</h1>
+  <p class="subtitle">إنشاء حسابات جاهزة للتجربة الفورية</p>
+
+  <div class="warning">
+    ⚠️ هذه الصفحة للاستخدام التجريبي فقط. احذفها بعد الانتهاء من التجربة.
+  </div>
+
+  <button class="btn btn-all" onclick="createAll()">✨ إنشاء جميع الحسابات دفعة واحدة</button>
+  <div id="all-status" class="status-box"></div>
+
+  <hr class="divider">
+
+  <div class="account-card">
+    <h3>👑 حساب المشرف (Admin)</h3>
+    <div class="info-row">
+      <span class="info-label">الإيميل:</span>
+      <span class="info-value">admin@careconnect.com</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">الباسورد:</span>
+      <span class="info-value">Admin@123456</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">الدور:</span>
+      <span class="info-value">مشرف (admin)</span>
+    </div>
+    <button class="btn btn-admin" id="btn-admin" onclick="createAdmin()">إنشاء حساب المشرف</button>
+    <div id="admin-status" class="status-box"></div>
+  </div>
+
+  <div class="account-card">
+    <h3>🏢 حساب المنظمة (Organization)</h3>
+    <div class="info-row">
+      <span class="info-label">الإيميل:</span>
+      <span class="info-value">org@careconnect.com</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">الباسورد:</span>
+      <span class="info-value">Org@123456</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">الدور:</span>
+      <span class="info-value">منظمة (مفعّلة مباشرة)</span>
+    </div>
+    <button class="btn btn-org" id="btn-org" onclick="createOrg()">إنشاء حساب المنظمة</button>
+    <div id="org-status" class="status-box"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="/js/firebase-config.js"></script>
+
+<script>
+  function showStatus(id, message, type) {
+    const el = document.getElementById(id);
+    el.textContent = message;
+    el.className = 'status-box status-' + type;
+    el.style.display = 'block';
+  }
+
+  async function createAdmin() {
+    const btn = document.getElementById('btn-admin');
+    btn.disabled = true;
+    btn.textContent = 'جارٍ الإنشاء...';
+    showStatus('admin-status', 'جارٍ إنشاء حساب المشرف...', 'info');
+
+    try {
+      const db = firebase.firestore();
+      const email = 'admin@careconnect.com';
+      const password = 'Admin@123456';
+      const now = new Date().toISOString();
+
+      let uid;
+      try {
+        const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        uid = cred.user.uid;
+        await cred.user.updateProfile({ displayName: 'مشرف النظام' });
+      } catch (e) {
+        if (e.code === 'auth/email-already-in-use') {
+          const methods = await firebase.auth().fetchSignInMethodsForEmail(email);
+          if (methods.length > 0) {
+            const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
+            uid = cred.user.uid;
+          }
+        } else throw e;
+      }
+
+      await db.collection('users').doc(uid).set({
+        uid,
+        email,
+        fullName: 'مشرف النظام',
+        role: 'admin',
+        status: 'approved',
+        phone: '',
+        address: '',
+        createdAt: now,
+        updatedAt: now
+      }, { merge: true });
+
+      await firebase.auth().signOut();
+      showStatus('admin-status', '✅ تم إنشاء حساب المشرف بنجاح!', 'success');
+      btn.textContent = '✅ تم الإنشاء';
+    } catch (err) {
+      showStatus('admin-status', '❌ خطأ: ' + err.message, 'error');
+      btn.disabled = false;
+      btn.textContent = 'إنشاء حساب المشرف';
+    }
+  }
+
+  async function createOrg() {
+    const btn = document.getElementById('btn-org');
+    btn.disabled = true;
+    btn.textContent = 'جارٍ الإنشاء...';
+    showStatus('org-status', 'جارٍ إنشاء حساب المنظمة...', 'info');
+
+    try {
+      const db = firebase.firestore();
+      const email = 'org@careconnect.com';
+      const password = 'Org@123456';
+      const now = new Date().toISOString();
+
+      let uid;
+      try {
+        const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        uid = cred.user.uid;
+        await cred.user.updateProfile({ displayName: 'منظمة رعاية' });
+      } catch (e) {
+        if (e.code === 'auth/email-already-in-use') {
+          const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
+          uid = cred.user.uid;
+        } else throw e;
+      }
+
+      await db.collection('users').doc(uid).set({
+        uid,
+        email,
+        fullName: 'منظمة رعاية',
+        role: 'organization',
+        status: 'approved',
+        organizationId: uid,
+        phone: '',
+        address: '',
+        createdAt: now,
+        updatedAt: now
+      }, { merge: true });
+
+      await db.collection('organizations').doc(uid).set({
+        uid,
+        organizationName: 'منظمة رعاية للتطوع',
+        email,
+        phone: '',
+        address: '',
+        description: 'منظمة تجريبية',
+        website: '',
+        verifiedVolunteers: [],
+        createdAt: now,
+        updatedAt: now
+      }, { merge: true });
+
+      await firebase.auth().signOut();
+      showStatus('org-status', '✅ تم إنشاء حساب المنظمة بنجاح!', 'success');
+      btn.textContent = '✅ تم الإنشاء';
+    } catch (err) {
+      showStatus('org-status', '❌ خطأ: ' + err.message, 'error');
+      btn.disabled = false;
+      btn.textContent = 'إنشاء حساب المنظمة';
+    }
+  }
+
+  async function createAll() {
+    const btn = document.querySelector('.btn-all');
+    btn.disabled = true;
+    btn.textContent = 'جارٍ إنشاء جميع الحسابات...';
+    showStatus('all-status', 'جارٍ إنشاء الحسابات...', 'info');
+    await createAdmin();
+    await createOrg();
+    showStatus('all-status', '✅ تم إنشاء جميع الحسابات بنجاح! يمكنك الآن تسجيل الدخول.', 'success');
+    btn.textContent = '✅ تم إنشاء جميع الحسابات';
+  }
+</script>
+</body>
+</html>
