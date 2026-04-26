@@ -1073,16 +1073,22 @@ async function handleVolunteerProfileSubmit(e) {
   document.querySelectorAll('input[name="skills"]:checked').forEach(cb => {
     skills.push(cb.value);
   });
+
+  const data = {
+    fullName: formData.get('fullName'),
+    phone: formData.get('phone'),
+    bio: formData.get('bio'),
+    skills,
+    updatedAt: new Date().toISOString()
+  };
   
   try {
-    await apiRequest('/api/volunteer/profile', {
-      method: 'PUT',
-      body: JSON.stringify({
-        fullName: formData.get('fullName'),
-        phone: formData.get('phone'),
-        bio: formData.get('bio'),
-        skills: skills
-      })
+    const db = firebase.firestore();
+    await db.collection('volunteer_profiles').doc(currentUser.uid).update(data);
+    await db.collection('users').doc(currentUser.uid).update({
+      fullName: data.fullName,
+      phone: data.phone,
+      updatedAt: data.updatedAt
     });
     showToast('تم حفظ الملف الشخصي بنجاح', 'success');
   } catch (error) {
@@ -1576,13 +1582,16 @@ async function handleUpdateOrgProfile(e) {
   const data = {
     organizationName: formData.get('organizationName'),
     registrationNumber: formData.get('registrationNumber'),
-    description: formData.get('description')
+    description: formData.get('description'),
+    updatedAt: new Date().toISOString()
   };
   
   try {
-    await apiRequest('/api/organization/profile', {
-      method: 'PUT',
-      body: JSON.stringify(data)
+    const db = firebase.firestore();
+    await db.collection('organizations').doc(currentUser.uid).update(data);
+    await db.collection('users').doc(currentUser.uid).update({
+      fullName: data.organizationName,
+      updatedAt: data.updatedAt
     });
     showToast('تم تحديث ملف المنظمة بنجاح!', 'success');
   } catch (error) {
@@ -1602,16 +1611,15 @@ async function handleUpdateElderlyProfile(e) {
     phone: formData.get('phone'),
     address: formData.get('address'),
     emergencyContact: formData.get('emergencyContact'),
-    specialNeeds: formData.get('specialNeeds')
+    specialNeeds: formData.get('specialNeeds'),
+    updatedAt: new Date().toISOString()
   };
   
   try {
-    await apiRequest('/api/auth/profile', {
-      method: 'PUT',
-      body: JSON.stringify(data)
-    });
+    const db = firebase.firestore();
+    await db.collection('users').doc(currentUser.uid).update(data);
+    await db.collection('elder_profiles').doc(currentUser.uid).update(data);
     
-    // Update local userProfile
     if (userProfile) {
       userProfile.fullName = data.fullName || userProfile.fullName;
       userProfile.phone = data.phone || userProfile.phone;
