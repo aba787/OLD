@@ -140,6 +140,24 @@
     <button class="btn btn-vol" id="btn-vol" onclick="createVolunteer()">إنشاء حساب المتطوع</button>
     <div id="vol-status" class="status-box"></div>
   </div>
+
+  <div class="account-card" style="border-color: #f0c070;">
+    <h3>👴 حساب كبير السن (Elderly)</h3>
+    <div class="info-row">
+      <span class="info-label">الإيميل:</span>
+      <span class="info-value">elderly@careconnect.com</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">الباسورد:</span>
+      <span class="info-value">Elderly@123456</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">الدور:</span>
+      <span class="info-value">كبير سن (مفعّل مباشرة)</span>
+    </div>
+    <button class="btn" id="btn-elderly" style="background:#e67e22;color:white;" onclick="createElderly()">إنشاء حساب كبير السن</button>
+    <div id="elderly-status" class="status-box"></div>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -329,6 +347,64 @@
     }
   }
 
+  async function createElderly() {
+    const btn = document.getElementById('btn-elderly');
+    btn.disabled = true;
+    btn.textContent = 'جارٍ الإنشاء...';
+    showStatus('elderly-status', 'جارٍ إنشاء حساب كبير السن...', 'info');
+
+    try {
+      const db = firebase.firestore();
+      const email = 'elderly@careconnect.com';
+      const password = 'Elderly@123456';
+      const now = new Date().toISOString();
+
+      let uid;
+      try {
+        const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        uid = cred.user.uid;
+        await cred.user.updateProfile({ displayName: 'أحمد المسن' });
+      } catch (e) {
+        if (e.code === 'auth/email-already-in-use') {
+          const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
+          uid = cred.user.uid;
+        } else throw e;
+      }
+
+      await db.collection('users').doc(uid).set({
+        uid,
+        email,
+        fullName: 'أحمد المسن',
+        role: 'elderly',
+        status: 'approved',
+        phone: '0501234567',
+        address: 'الرياض، حي النزهة',
+        createdAt: now,
+        updatedAt: now
+      }, { merge: true });
+
+      await db.collection('elder_profiles').doc(uid).set({
+        uid,
+        fullName: 'أحمد المسن',
+        email,
+        phone: '0501234567',
+        address: 'الرياض، حي النزهة',
+        emergencyContact: '',
+        specialNeeds: '',
+        createdAt: now,
+        updatedAt: now
+      }, { merge: true });
+
+      await firebase.auth().signOut();
+      showStatus('elderly-status', '✅ تم إنشاء حساب كبير السن بنجاح!', 'success');
+      btn.textContent = '✅ تم الإنشاء';
+    } catch (err) {
+      showStatus('elderly-status', '❌ خطأ: ' + err.message, 'error');
+      btn.disabled = false;
+      btn.textContent = 'إنشاء حساب كبير السن';
+    }
+  }
+
   async function createAll() {
     const btn = document.querySelector('.btn-all');
     btn.disabled = true;
@@ -337,6 +413,7 @@
     await createAdmin();
     await createOrg();
     await createVolunteer();
+    await createElderly();
     showStatus('all-status', '✅ تم إنشاء جميع الحسابات بنجاح! يمكنك الآن تسجيل الدخول.', 'success');
     btn.textContent = '✅ تم إنشاء جميع الحسابات';
   }

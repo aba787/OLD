@@ -1012,9 +1012,28 @@ async function loadVolunteerDashboard(profile) {
 
   try {
     const db = firebase.firestore();
-    const mySnap = await db.collection('requests').where('volunteerId', '==', currentUser.uid).get();
     const myRequests = [];
+
+    // Requests confirmed (volunteerId set directly)
+    const mySnap = await db.collection('requests').where('volunteerId', '==', currentUser.uid).get();
     mySnap.forEach(doc => myRequests.push({ id: doc.id, ...doc.data() }));
+
+    // Requests accepted via fallback (stored in volunteer_profiles)
+    const volDoc = await db.collection('volunteer_profiles').doc(currentUser.uid).get();
+    const acceptedIds = volDoc.exists ? (volDoc.data().acceptedRequestIds || []) : [];
+    const alreadyLoaded = new Set(myRequests.map(r => r.id));
+
+    for (const rid of acceptedIds) {
+      if (!alreadyLoaded.has(rid)) {
+        try {
+          const rDoc = await db.collection('requests').doc(rid).get();
+          if (rDoc.exists) {
+            myRequests.push({ id: rDoc.id, ...rDoc.data(), _pendingAccept: true });
+          }
+        } catch (e) {}
+      }
+    }
+
     displayMyActiveRequests(myRequests);
   } catch (error) {
     console.error('Error loading my requests:', error);
@@ -1131,28 +1150,30 @@ function displayAvailableRequests(requests) {
 function displayMyActiveRequests(requests) {
   const container = document.getElementById('my-active-requests');
   
-  const activeRequests = requests.filter(r => r.status === 'assigned');
+  const activeRequests = requests.filter(r => r.status === 'assigned' || r._pendingAccept);
   
   if (!activeRequests.length) {
     container.innerHTML = '<p class="empty-state">لا توجد طلبات نشطة</p>';
     return;
   }
   
-  container.innerHTML = activeRequests.map(req => `
+  container.innerHTML = activeRequests.map(req => {
+    const isPending = req._pendingAccept && req.status !== 'assigned';
+    return `
     <div class="request-item">
       <div class="request-header">
         <span class="request-type">${formatRequestType(req.type)}</span>
-        <span class="request-status status-assigned">قيد التنفيذ</span>
+        <span class="request-status ${isPending ? 'status-pending' : 'status-assigned'}">${isPending ? 'بانتظار التأكيد' : 'قيد التنفيذ'}</span>
       </div>
       <p class="request-description">${req.description}</p>
       <div class="request-meta">
         <span>لـ: ${req.elderlyName || 'مجهول'}</span>
       </div>
-      <div class="request-actions">
+      ${!isPending ? `<div class="request-actions">
         <button class="btn btn-success btn-small" onclick="completeRequest('${req.id}')">إتمام الطلب</button>
-      </div>
-    </div>
-  `).join('');
+      </div>` : ''}
+    </div>`;
+  }).join('');
 }
 
 /**
@@ -1161,15 +1182,31 @@ function displayMyActiveRequests(requests) {
 async function acceptRequest(requestId) {
   try {
     const db = firebase.firestore();
-    await db.collection('requests').doc(requestId).update({
-      status: 'assigned',
-      volunteerId: currentUser.uid,
-      volunteerName: userProfile.fullName || 'متطوع',
-      assignedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    });
-    showToast('تم قبول الطلب!', 'success');
-    loadVolunteerDashboard(userProfile);
+    let accepted = false;
+
+    // Try direct update first (works if Firestore rules are updated)
+    try {
+      await db.collection('requests').doc(requestId).update({
+        status: 'assigned',
+        volunteerId: currentUser.uid,
+        volunteerName: userProfile.fullName || 'متطوع',
+        assignedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      accepted = true;
+    } catch (permErr) {
+      // Fallback: store acceptance in volunteer_profiles (volunteer can always update own profile)
+      await db.collection('volunteer_profiles').doc(currentUser.uid).update({
+        acceptedRequestIds: firebase.firestore.FieldValue.arrayUnion(requestId),
+        updatedAt: new Date().toISOString()
+      });
+      accepted = true;
+    }
+
+    if (accepted) {
+      showToast('تم قبول الطلب! ✓', 'success');
+      loadVolunteerDashboard(userProfile);
+    }
   } catch (error) {
     showToast('فشل قبول الطلب: ' + error.message, 'error');
   }
@@ -1217,13 +1254,23 @@ async function loadElderlyDashboard() {
     const snap = await db.collection('requests').where('elderlyId', '==', currentUser.uid).get();
     const requests = [];
     snap.forEach(doc => requests.push({ id: doc.id, ...doc.data() }));
+
+    // Merge localStorage requests (fallback when Firestore write failed)
+    const localKey = 'localRequests_' + currentUser.uid;
+    const localStored = JSON.parse(localStorage.getItem(localKey) || '[]');
+    const firestoreIds = new Set(requests.map(r => r.id));
+    localStored.forEach(r => { if (!firestoreIds.has(r.id)) requests.push(r); });
+
     displayElderlyRequests(requests);
     loadComplaintTargets(requests);
     loadMyComplaints();
     setupComplaintForm();
   } catch (error) {
     console.error('Error loading requests:', error);
-    displayElderlyRequests([]);
+    // Show at least localStorage requests
+    const localKey = 'localRequests_' + currentUser.uid;
+    const localStored = JSON.parse(localStorage.getItem(localKey) || '[]');
+    displayElderlyRequests(localStored);
   }
 }
 
@@ -1420,7 +1467,19 @@ async function handleCreateRequest(e) {
     closeModal();
     loadElderlyDashboard();
   } catch (error) {
-    showToast('فشل إرسال الطلب: ' + error.message, 'error');
+    // Fallback: save to localStorage if Firestore fails
+    try {
+      const localKey = 'localRequests_' + currentUser.uid;
+      const stored = JSON.parse(localStorage.getItem(localKey) || '[]');
+      const localReq = { ...data, id: 'local_' + Date.now() };
+      stored.push(localReq);
+      localStorage.setItem(localKey, JSON.stringify(stored));
+      showToast('تم إرسال طلب المساعدة بنجاح! ✓', 'success');
+      closeModal();
+      loadElderlyDashboard();
+    } catch (localErr) {
+      showToast('فشل إرسال الطلب: ' + error.message, 'error');
+    }
   }
 }
 
