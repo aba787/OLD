@@ -1483,10 +1483,13 @@ async function loadOrganizationDashboard(profile) {
     const orgDoc = await db.collection('organizations').doc(currentUser.uid).get();
     const verifiedIds = orgDoc.exists ? (orgDoc.data().verifiedVolunteers || []) : [];
 
-    // Get ALL volunteers
-    const usersSnap = await db.collection('users').where('role', '==', 'volunteer').get();
+    // Get ALL volunteers from volunteer_profiles (readable by all authenticated users)
+    const volSnap = await db.collection('volunteer_profiles').get();
     const allVolunteers = [];
-    usersSnap.forEach(doc => allVolunteers.push(doc.data()));
+    volSnap.forEach(doc => {
+      const data = doc.data();
+      if (data.uid) allVolunteers.push(data);
+    });
 
     const verifiedVols = allVolunteers.filter(v => verifiedIds.includes(v.uid));
     const unverifiedVols = allVolunteers.filter(v => !verifiedIds.includes(v.uid));

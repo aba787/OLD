@@ -203,6 +203,7 @@ async function handleRegister(e) {
       const volunteerProfile = {
         uid: user.uid,
         fullName,
+        email: user.email,
         phone: phone || '',
         address: address || '',
         skills: [],
