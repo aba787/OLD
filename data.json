@@ -96,7 +96,40 @@
   },
   "requests": {},
   "complaints": {},
-  "sessions": {},
+  "sessions": {
+    "ca329ffd524021a33bfc70c8d4a32e81dc41ae965a1800fcb736f3a585a25bae": {
+      "uid": "mojsffuzj6ovib",
+      "createdAt": "2026-04-29T08:23:30.926Z"
+    },
+    "4f79921122996c1d6b89b10cb8924a08e4d01ed2d0d87bdabb53c4ee1c276dc3": {
+      "uid": "mojsffym66920w",
+      "createdAt": "2026-04-29T08:23:31.022Z"
+    },
+    "e87f55509d42848b221ee0b3be6ba853cfd998a38ede81043f0a478db1cab056": {
+      "uid": "mojsffw9zied12",
+      "createdAt": "2026-04-29T08:31:50.814Z"
+    },
+    "cfb75d3fc1e5b43814fe5141bb097ff8e2acf8546aad2ea4fea14d3167cd737a": {
+      "uid": "mojsffxe2l8w6j",
+      "createdAt": "2026-04-29T08:31:51.195Z"
+    },
+    "759eff224d25e3424e3cc1e03d8ee92ded5acd99bea62808a0d80146346e281f": {
+      "uid": "mojsffym66920w",
+      "createdAt": "2026-04-29T08:31:51.613Z"
+    },
+    "bbd0a4ba5d677922a453c64d49ce7ee5c493d1899f053254b83ff7f40240a1e4": {
+      "uid": "mojsffw9zied12",
+      "createdAt": "2026-04-29T08:32:10.638Z"
+    },
+    "ea4d1f10537db026216e9594343fbac13ed14f9c22f8e940581daa8d4416f43b": {
+      "uid": "mojsffxe2l8w6j",
+      "createdAt": "2026-04-29T08:32:11.140Z"
+    },
+    "0de68afb54ad79529eefb12721161ac64508f7440ba4919a8ddd212d786d89cc": {
+      "uid": "mojsffym66920w",
+      "createdAt": "2026-04-29T08:32:11.511Z"
+    }
+  },
   "credentials": {
     "admin@careconnect.com": {
       "uid": "mojsffuzj6ovib",
