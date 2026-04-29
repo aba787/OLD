@@ -61,9 +61,12 @@
       "completedRequests": 0,
       "rating": 0,
       "ratingCount": 0,
-      "verified": false,
-      "verifiedBy": null,
-      "createdAt": "2026-04-29T08:23:13.294Z"
+      "verified": true,
+      "verifiedBy": "mojsffw9zied12",
+      "createdAt": "2026-04-29T08:23:13.294Z",
+      "verifiedByOrg": "mojsffw9zied12",
+      "verifiedByOrgName": "منظمة رعاية للتطوع",
+      "verifiedAt": "2026-04-29T09:04:35.393Z"
     }
   },
   "elder_profiles": {
@@ -90,7 +93,9 @@
       "address": "",
       "description": "",
       "website": "",
-      "verifiedVolunteers": [],
+      "verifiedVolunteers": [
+        "mojsffxe2l8w6j"
+      ],
       "createdAt": "2026-04-29T08:23:13.250Z"
     }
   },
@@ -128,6 +133,10 @@
     "0de68afb54ad79529eefb12721161ac64508f7440ba4919a8ddd212d786d89cc": {
       "uid": "mojsffym66920w",
       "createdAt": "2026-04-29T08:32:11.511Z"
+    },
+    "92e43e023ea128727006b5561b47cd293b76f3ecea0a5748c95c38fb90dd8378": {
+      "uid": "mojsffxe2l8w6j",
+      "createdAt": "2026-04-29T09:05:02.849Z"
     }
   },
   "credentials": {
