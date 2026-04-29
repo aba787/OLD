@@ -9,7 +9,9 @@ const defaultState = {
   elder_profiles: {},
   organizations: {},
   requests: {},
-  complaints: {}
+  complaints: {},
+  sessions: {},
+  credentials: {}
 };
 
 let state = null;

@@ -1,31 +1,24 @@
 /**
  * Authentication JavaScript - جافاسكريبت المصادقة
- * 
- * Handles login, registration, and authentication state on the client side.
- * يتعامل مع تسجيل الدخول والتسجيل وحالة المصادقة
+ * Uses local server-side auth (no Firebase).
  */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const loginForm = document.getElementById('login-form');
   const registerForm = document.getElementById('register-form');
-  
-  if (typeof firebase !== 'undefined' && firebase.auth) {
-    firebase.auth().onAuthStateChanged((user) => {
-      if (user) {
-        window.location.href = '/dashboard';
-      }
-    });
-  }
-  
-  if (loginForm) {
-    loginForm.addEventListener('submit', handleLogin);
-  }
-  
+
+  try {
+    const me = await authApi.me();
+    if (me && me.user) {
+      window.location.href = '/dashboard';
+      return;
+    }
+  } catch (e) { /* not logged in */ }
+
+  if (loginForm) loginForm.addEventListener('submit', handleLogin);
   if (registerForm) {
     registerForm.addEventListener('submit', handleRegister);
-    
-    const roleInputs = document.querySelectorAll('input[name="role"]');
-    roleInputs.forEach(input => {
+    document.querySelectorAll('input[name="role"]').forEach(input => {
       input.addEventListener('change', (e) => {
         const orgFields = document.getElementById('org-fields');
         if (e.target.value === 'organization') {
@@ -40,12 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-/**
- * Handle Login Form Submission - معالجة تسجيل الدخول
- */
 async function handleLogin(e) {
   e.preventDefault();
-  
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
   const errorEl = document.getElementById('error-message');
@@ -53,72 +42,29 @@ async function handleLogin(e) {
   const loginText = document.getElementById('login-text');
   const loginLoading = document.getElementById('login-loading');
   const loginBtn = document.getElementById('login-btn');
-  
+
   errorEl.classList.add('hidden');
   successEl.classList.add('hidden');
-  
   loginBtn.disabled = true;
   loginText.classList.add('hidden');
   loginLoading.classList.remove('hidden');
-  
+
   try {
-    if (typeof firebase === 'undefined' || !firebase.auth) {
-      throw new Error('نظام المصادقة غير متاح. يرجى الاتصال بالمسؤول.');
-    }
-    
-    const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
-    const user = userCredential.user;
-
-    try {
-      await dataApi.get('users', user.uid);
-    } catch (e) {
-      await dataApi.save('users', {
-        uid: user.uid, id: user.uid,
-        email: user.email,
-        fullName: user.displayName || email.split('@')[0],
-        role: 'elderly', status: 'approved',
-        phone: '', address: ''
-      });
-    }
-
+    await authApi.login(email, password);
     successEl.textContent = 'تم تسجيل الدخول بنجاح! جارٍ التحويل...';
     successEl.classList.remove('hidden');
-    
-    setTimeout(() => {
-      window.location.href = '/dashboard';
-    }, 1000);
-    
+    setTimeout(() => { window.location.href = '/dashboard'; }, 600);
   } catch (error) {
-    console.error('Login error:', error);
-    
-    let message = 'فشل تسجيل الدخول. يرجى التحقق من بياناتك.';
-    if (error.code === 'auth/user-not-found') {
-      message = 'لا يوجد حساب بهذا البريد الإلكتروني.';
-    } else if (error.code === 'auth/wrong-password') {
-      message = 'كلمة المرور غير صحيحة. حاول مرة أخرى.';
-    } else if (error.code === 'auth/invalid-email') {
-      message = 'يرجى إدخال بريد إلكتروني صحيح.';
-    } else if (error.code === 'auth/too-many-requests') {
-      message = 'محاولات كثيرة جداً. حاول لاحقاً.';
-    } else if (error.code === 'auth/invalid-credential') {
-      message = 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
-    }
-    
-    errorEl.textContent = message;
+    errorEl.textContent = error.message || 'فشل تسجيل الدخول';
     errorEl.classList.remove('hidden');
-  } finally {
     loginBtn.disabled = false;
     loginText.classList.remove('hidden');
     loginLoading.classList.add('hidden');
   }
 }
 
-/**
- * Handle Registration Form Submission - معالجة إنشاء الحساب
- */
 async function handleRegister(e) {
   e.preventDefault();
-  
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
   const confirmPassword = document.getElementById('confirmPassword').value;
@@ -126,120 +72,37 @@ async function handleRegister(e) {
   const phone = document.getElementById('phone').value;
   const address = document.getElementById('address').value;
   const role = document.querySelector('input[name="role"]:checked')?.value;
-  
+
   const errorEl = document.getElementById('error-message');
   const successEl = document.getElementById('success-message');
   const registerText = document.getElementById('register-text');
   const registerLoading = document.getElementById('register-loading');
   const registerBtn = document.getElementById('register-btn');
-  
+
   errorEl.classList.add('hidden');
   successEl.classList.add('hidden');
-  
-  if (!role) {
-    errorEl.textContent = 'يرجى اختيار نوع الحساب.';
-    errorEl.classList.remove('hidden');
-    return;
-  }
-  
-  if (password !== confirmPassword) {
-    errorEl.textContent = 'كلمتا المرور غير متطابقتين.';
-    errorEl.classList.remove('hidden');
-    return;
-  }
-  
-  if (password.length < 6) {
-    errorEl.textContent = 'كلمة المرور يجب أن تكون ٦ أحرف على الأقل.';
-    errorEl.classList.remove('hidden');
-    return;
-  }
-  
+
+  if (!role) { errorEl.textContent = 'يرجى اختيار نوع الحساب.'; errorEl.classList.remove('hidden'); return; }
+  if (password !== confirmPassword) { errorEl.textContent = 'كلمتا المرور غير متطابقتين.'; errorEl.classList.remove('hidden'); return; }
+  if (password.length < 6) { errorEl.textContent = 'كلمة المرور يجب أن تكون ٦ أحرف على الأقل.'; errorEl.classList.remove('hidden'); return; }
+
   registerBtn.disabled = true;
   registerText.classList.add('hidden');
   registerLoading.classList.remove('hidden');
-  
-  try {
-    if (typeof firebase === 'undefined' || !firebase.auth) {
-      throw new Error('نظام المصادقة غير متاح. يرجى الاتصال بالمسؤول.');
-    }
-    
-    const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
-    const user = userCredential.user;
-    
-    await user.updateProfile({ displayName: fullName });
-    
-    const now = new Date().toISOString();
-    const userData = {
-      uid: user.uid, id: user.uid,
-      email: user.email,
-      fullName,
-      phone: phone || '',
-      address: address || '',
-      role,
-      status: 'approved',
-      createdAt: now
-    };
-    if (role === 'organization') userData.organizationId = user.uid;
-    await dataApi.save('users', userData);
 
-    if (role === 'elderly') {
-      await dataApi.save('elder_profiles', {
-        uid: user.uid, id: user.uid,
-        fullName, email: user.email,
-        phone: phone || '', address: address || '',
-        emergencyContact: '', specialNeeds: '',
-        createdAt: now
-      });
-    } else if (role === 'volunteer') {
-      await dataApi.save('volunteer_profiles', {
-        uid: user.uid, id: user.uid,
-        fullName, email: user.email,
-        phone: phone || '', address: address || '',
-        skills: [], availability: {}, bio: '',
-        totalHours: 0, completedRequests: 0,
-        rating: 0, ratingCount: 0,
-        verified: false, verifiedBy: null,
-        createdAt: now
-      });
-    } else if (role === 'organization') {
-      const orgName = document.getElementById('organizationName').value || fullName;
-      const regNumber = document.getElementById('registrationNumber').value || '';
-      await dataApi.save('organizations', {
-        uid: user.uid, id: user.uid,
-        organizationName: orgName,
-        registrationNumber: regNumber,
-        email: user.email,
-        phone: phone || '', address: address || '',
-        description: '', website: '',
-        verifiedVolunteers: [],
-        createdAt: now
-      });
+  try {
+    const payload = { email, password, fullName, phone, address, role };
+    if (role === 'organization') {
+      payload.organizationName = document.getElementById('organizationName').value || fullName;
+      payload.registrationNumber = document.getElementById('registrationNumber').value || '';
     }
-    
-    let successMessage = 'تم إنشاء الحساب بنجاح! جارٍ التحويل...';
-    
-    successEl.textContent = successMessage;
+    await authApi.register(payload);
+    successEl.textContent = 'تم إنشاء الحساب بنجاح! جارٍ التحويل...';
     successEl.classList.remove('hidden');
-    
-    setTimeout(() => {
-      window.location.href = '/dashboard';
-    }, 2000);
-    
+    setTimeout(() => { window.location.href = '/dashboard'; }, 800);
   } catch (error) {
-    console.error('Registration error:', error);
-    
-    let message = 'فشل إنشاء الحساب. حاول مرة أخرى.';
-    if (error.code === 'auth/email-already-in-use') {
-      message = 'يوجد حساب بهذا البريد الإلكتروني.';
-    } else if (error.code === 'auth/invalid-email') {
-      message = 'يرجى إدخال بريد إلكتروني صحيح.';
-    } else if (error.code === 'auth/weak-password') {
-      message = 'كلمة المرور ضعيفة. استخدم كلمة مرور أقوى.';
-    }
-    
-    errorEl.textContent = message;
+    errorEl.textContent = error.message || 'فشل إنشاء الحساب';
     errorEl.classList.remove('hidden');
-  } finally {
     registerBtn.disabled = false;
     registerText.classList.remove('hidden');
     registerLoading.classList.add('hidden');

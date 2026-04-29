@@ -8,20 +8,17 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initializeDashboard() {
-  if (typeof firebase === 'undefined' || !firebase.auth) {
-    showError('نظام المصادقة غير متاح. يرجى تحديث الصفحة.', true);
+  authStateResolved = true;
+  let user = null;
+  try {
+    const res = await authApi.me();
+    user = res.user;
+  } catch (e) {
+    window.location.href = '/login';
     return;
   }
-
-  firebase.auth().onAuthStateChanged(async (user) => {
-    authStateResolved = true;
-    if (user) {
-      currentUser = user;
-      await loadOrCreateUserProfile(user);
-    } else {
-      window.location.href = '/login';
-    }
-  });
+  currentUser = user;
+  await loadOrCreateUserProfile(user);
 
   document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
   document.getElementById('request-form')?.addEventListener('submit', handleCreateRequest);
@@ -31,14 +28,7 @@ async function initializeDashboard() {
 
 async function loadOrCreateUserProfile(user) {
   try {
-    let userData = null;
-    try {
-      userData = await dataApi.get('users', user.uid);
-    } catch (e) {
-      showRoleSelectionScreen(user);
-      return;
-    }
-
+    let userData = user;
     currentRole = userData.role;
     let additionalProfile = {};
     const roleCol = getRoleCollection(userData.role);
@@ -54,7 +44,7 @@ async function loadOrCreateUserProfile(user) {
     userProfile = {
       uid: user.uid,
       email: user.email,
-      fullName: userData.fullName || user.displayName || 'مستخدم',
+      fullName: userData.fullName || 'مستخدم',
       role: userData.role,
       status: userData.status || 'approved',
       phone: userData.phone || '',
@@ -897,10 +887,8 @@ async function handleUpdateElderlyProfile(e) {
 }
 
 async function handleLogout() {
-  try {
-    await firebase.auth().signOut();
-    window.location.href = '/login';
-  } catch (e) { showToast('فشل تسجيل الخروج', 'error'); }
+  try { await authApi.logout(); } catch (e) {}
+  window.location.href = '/login';
 }
 
 function formatRequestType(type) {

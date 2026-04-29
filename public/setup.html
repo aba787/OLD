@@ -70,6 +70,8 @@
     .status-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
     .divider { border: none; border-top: 2px dashed #e8f4f4; margin: 24px 0; }
     .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; border-radius: 8px; padding: 12px 16px; font-size: 0.85rem; margin-bottom: 24px; }
+    .links { text-align: center; margin-top: 20px; }
+    .links a { color: #2d6a6a; text-decoration: none; font-weight: 600; margin: 0 8px; }
   </style>
 </head>
 <body>
@@ -79,7 +81,7 @@
   <p class="subtitle">إنشاء حسابات جاهزة للتجربة الفورية</p>
 
   <div class="warning">
-    ⚠️ هذه الصفحة للاستخدام التجريبي فقط. احذفها بعد الانتهاء من التجربة.
+    ⚠️ هذه الصفحة للاستخدام التجريبي فقط. الحسابات تُنشأ على السيرفر مباشرة بدون أي قاعدة بيانات خارجية.
   </div>
 
   <button class="btn btn-all" onclick="createAll()">✨ إنشاء جميع الحسابات دفعة واحدة</button>
@@ -89,84 +91,51 @@
 
   <div class="account-card">
     <h3>👑 حساب المشرف (Admin)</h3>
-    <div class="info-row">
-      <span class="info-label">الإيميل:</span>
-      <span class="info-value">admin@careconnect.com</span>
-    </div>
-    <div class="info-row">
-      <span class="info-label">الباسورد:</span>
-      <span class="info-value">Admin@123456</span>
-    </div>
-    <div class="info-row">
-      <span class="info-label">الدور:</span>
-      <span class="info-value">مشرف (admin)</span>
-    </div>
-    <button class="btn btn-admin" id="btn-admin" onclick="createAdmin()">إنشاء حساب المشرف</button>
+    <div class="info-row"><span class="info-label">الإيميل:</span><span class="info-value">admin@careconnect.com</span></div>
+    <div class="info-row"><span class="info-label">الباسورد:</span><span class="info-value">Admin@123456</span></div>
+    <button class="btn btn-admin" id="btn-admin" onclick="createOne('admin')">إنشاء حساب المشرف</button>
     <div id="admin-status" class="status-box"></div>
   </div>
 
   <div class="account-card">
     <h3>🏢 حساب المنظمة (Organization)</h3>
-    <div class="info-row">
-      <span class="info-label">الإيميل:</span>
-      <span class="info-value">org@careconnect.com</span>
-    </div>
-    <div class="info-row">
-      <span class="info-label">الباسورد:</span>
-      <span class="info-value">Org@123456</span>
-    </div>
-    <div class="info-row">
-      <span class="info-label">الدور:</span>
-      <span class="info-value">منظمة (مفعّلة مباشرة)</span>
-    </div>
-    <button class="btn btn-org" id="btn-org" onclick="createOrg()">إنشاء حساب المنظمة</button>
+    <div class="info-row"><span class="info-label">الإيميل:</span><span class="info-value">org@careconnect.com</span></div>
+    <div class="info-row"><span class="info-label">الباسورد:</span><span class="info-value">Org@123456</span></div>
+    <button class="btn btn-org" id="btn-org" onclick="createOne('org')">إنشاء حساب المنظمة</button>
     <div id="org-status" class="status-box"></div>
   </div>
 
   <div class="account-card">
     <h3>🙋 حساب المتطوع (Volunteer)</h3>
-    <div class="info-row">
-      <span class="info-label">الإيميل:</span>
-      <span class="info-value">volunteer@careconnect.com</span>
-    </div>
-    <div class="info-row">
-      <span class="info-label">الباسورد:</span>
-      <span class="info-value">Vol@123456</span>
-    </div>
-    <div class="info-row">
-      <span class="info-label">الدور:</span>
-      <span class="info-value">متطوع (مفعّل مباشرة)</span>
-    </div>
-    <button class="btn btn-vol" id="btn-vol" onclick="createVolunteer()">إنشاء حساب المتطوع</button>
+    <div class="info-row"><span class="info-label">الإيميل:</span><span class="info-value">volunteer@careconnect.com</span></div>
+    <div class="info-row"><span class="info-label">الباسورد:</span><span class="info-value">Vol@123456</span></div>
+    <button class="btn btn-vol" id="btn-vol" onclick="createOne('vol')">إنشاء حساب المتطوع</button>
     <div id="vol-status" class="status-box"></div>
   </div>
 
   <div class="account-card" style="border-color: #f0c070;">
     <h3>👴 حساب كبير السن (Elderly)</h3>
-    <div class="info-row">
-      <span class="info-label">الإيميل:</span>
-      <span class="info-value">elderly@careconnect.com</span>
-    </div>
-    <div class="info-row">
-      <span class="info-label">الباسورد:</span>
-      <span class="info-value">Elderly@123456</span>
-    </div>
-    <div class="info-row">
-      <span class="info-label">الدور:</span>
-      <span class="info-value">كبير سن (مفعّل مباشرة)</span>
-    </div>
-    <button class="btn" id="btn-elderly" style="background:#e67e22;color:white;" onclick="createElderly()">إنشاء حساب كبير السن</button>
+    <div class="info-row"><span class="info-label">الإيميل:</span><span class="info-value">elderly@careconnect.com</span></div>
+    <div class="info-row"><span class="info-label">الباسورد:</span><span class="info-value">Elderly@123456</span></div>
+    <button class="btn" id="btn-elderly" style="background:#e67e22;color:white;" onclick="createOne('elderly')">إنشاء حساب كبير السن</button>
     <div id="elderly-status" class="status-box"></div>
+  </div>
+
+  <div class="links">
+    <a href="/login">→ تسجيل الدخول</a>
+    <a href="/">→ الصفحة الرئيسية</a>
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="/js/firebase-config.js"></script>
-<script src="/js/data-api.js"></script>
-
+<script src="/js/auth-api.js"></script>
 <script>
+  const ACCOUNTS = {
+    admin:   { btn: 'btn-admin',   status: 'admin-status',   email: 'admin@careconnect.com',     password: 'Admin@123456',   fullName: 'مشرف النظام',  role: 'admin' },
+    org:     { btn: 'btn-org',     status: 'org-status',     email: 'org@careconnect.com',       password: 'Org@123456',     fullName: 'منظمة رعاية',  role: 'organization', organizationName: 'منظمة رعاية للتطوع' },
+    vol:     { btn: 'btn-vol',     status: 'vol-status',     email: 'volunteer@careconnect.com', password: 'Vol@123456',     fullName: 'متطوع تجريبي', role: 'volunteer' },
+    elderly: { btn: 'btn-elderly', status: 'elderly-status', email: 'elderly@careconnect.com',   password: 'Elderly@123456', fullName: 'أحمد المسن',   role: 'elderly' }
+  };
+
   function showStatus(id, message, type) {
     const el = document.getElementById(id);
     el.textContent = message;
@@ -174,229 +143,48 @@
     el.style.display = 'block';
   }
 
-  async function createAdmin() {
-    const btn = document.getElementById('btn-admin');
+  async function createOne(key) {
+    const a = ACCOUNTS[key];
+    const btn = document.getElementById(a.btn);
     btn.disabled = true;
+    const oldText = btn.textContent;
     btn.textContent = 'جارٍ الإنشاء...';
-    showStatus('admin-status', 'جارٍ إنشاء حساب المشرف...', 'info');
-
+    showStatus(a.status, 'جارٍ إنشاء الحساب...', 'info');
     try {
-      const db = firebase.firestore();
-      const email = 'admin@careconnect.com';
-      const password = 'Admin@123456';
-      const now = new Date().toISOString();
-
-      let uid;
-      try {
-        const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
-        uid = cred.user.uid;
-        await cred.user.updateProfile({ displayName: 'مشرف النظام' });
-      } catch (e) {
-        if (e.code === 'auth/email-already-in-use') {
-          const methods = await firebase.auth().fetchSignInMethodsForEmail(email);
-          if (methods.length > 0) {
-            const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
-            uid = cred.user.uid;
-          }
-        } else throw e;
+      const res = await authApi.ensureTestAccount({
+        email: a.email, password: a.password, fullName: a.fullName,
+        role: a.role, organizationName: a.organizationName
+      });
+      if (res.alreadyExists) {
+        showStatus(a.status, '✅ الحساب موجود مسبقاً وجاهز للاستخدام', 'success');
+      } else {
+        showStatus(a.status, '✅ تم إنشاء الحساب بنجاح!', 'success');
       }
-
-      await dataApi.save('users', {
-        uid, id: uid, email,
-        fullName: 'مشرف النظام',
-        role: 'admin',
-        status: 'approved',
-        phone: '', address: '',
-        createdAt: now
-      });
-
-      await firebase.auth().signOut();
-      showStatus('admin-status', '✅ تم إنشاء حساب المشرف بنجاح!', 'success');
-      btn.textContent = '✅ تم الإنشاء';
+      btn.textContent = '✅ جاهز';
+      try { await authApi.logout(); } catch (e) {}
+      return true;
     } catch (err) {
-      showStatus('admin-status', '❌ خطأ: ' + err.message, 'error');
+      showStatus(a.status, '❌ خطأ: ' + (err.message || err), 'error');
       btn.disabled = false;
-      btn.textContent = 'إنشاء حساب المشرف';
-    }
-  }
-
-  async function createOrg() {
-    const btn = document.getElementById('btn-org');
-    btn.disabled = true;
-    btn.textContent = 'جارٍ الإنشاء...';
-    showStatus('org-status', 'جارٍ إنشاء حساب المنظمة...', 'info');
-
-    try {
-      const db = firebase.firestore();
-      const email = 'org@careconnect.com';
-      const password = 'Org@123456';
-      const now = new Date().toISOString();
-
-      let uid;
-      try {
-        const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
-        uid = cred.user.uid;
-        await cred.user.updateProfile({ displayName: 'منظمة رعاية' });
-      } catch (e) {
-        if (e.code === 'auth/email-already-in-use') {
-          const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
-          uid = cred.user.uid;
-        } else throw e;
-      }
-
-      await dataApi.save('users', {
-        uid, id: uid, email,
-        fullName: 'منظمة رعاية',
-        role: 'organization',
-        status: 'approved',
-        organizationId: uid,
-        phone: '', address: '',
-        createdAt: now
-      });
-
-      await dataApi.save('organizations', {
-        uid, id: uid,
-        organizationName: 'منظمة رعاية للتطوع',
-        email,
-        phone: '', address: '',
-        description: 'منظمة تجريبية',
-        website: '',
-        verifiedVolunteers: [],
-        createdAt: now
-      });
-
-      await firebase.auth().signOut();
-      showStatus('org-status', '✅ تم إنشاء حساب المنظمة بنجاح!', 'success');
-      btn.textContent = '✅ تم الإنشاء';
-    } catch (err) {
-      showStatus('org-status', '❌ خطأ: ' + err.message, 'error');
-      btn.disabled = false;
-      btn.textContent = 'إنشاء حساب المنظمة';
-    }
-  }
-
-  async function createVolunteer() {
-    const btn = document.getElementById('btn-vol');
-    btn.disabled = true;
-    btn.textContent = 'جارٍ الإنشاء...';
-    showStatus('vol-status', 'جارٍ إنشاء حساب المتطوع...', 'info');
-
-    try {
-      const db = firebase.firestore();
-      const email = 'volunteer@careconnect.com';
-      const password = 'Vol@123456';
-      const now = new Date().toISOString();
-
-      let uid;
-      try {
-        const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
-        uid = cred.user.uid;
-        await cred.user.updateProfile({ displayName: 'متطوع تجريبي' });
-      } catch (e) {
-        if (e.code === 'auth/email-already-in-use') {
-          const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
-          uid = cred.user.uid;
-        } else throw e;
-      }
-
-      await dataApi.save('users', {
-        uid, id: uid, email,
-        fullName: 'متطوع تجريبي',
-        role: 'volunteer',
-        status: 'approved',
-        phone: '', address: '',
-        createdAt: now
-      });
-
-      await dataApi.save('volunteer_profiles', {
-        uid, id: uid,
-        fullName: 'متطوع تجريبي',
-        email,
-        phone: '', address: '',
-        skills: [], availability: {}, bio: '',
-        totalHours: 0, completedRequests: 0,
-        rating: 0, ratingCount: 0,
-        verified: false, verifiedBy: null,
-        createdAt: now
-      });
-
-      await firebase.auth().signOut();
-      showStatus('vol-status', '✅ تم إنشاء حساب المتطوع بنجاح!', 'success');
-      btn.textContent = '✅ تم الإنشاء';
-    } catch (err) {
-      showStatus('vol-status', '❌ خطأ: ' + err.message, 'error');
-      btn.disabled = false;
-      btn.textContent = 'إنشاء حساب المتطوع';
-    }
-  }
-
-  async function createElderly() {
-    const btn = document.getElementById('btn-elderly');
-    btn.disabled = true;
-    btn.textContent = 'جارٍ الإنشاء...';
-    showStatus('elderly-status', 'جارٍ إنشاء حساب كبير السن...', 'info');
-
-    try {
-      const db = firebase.firestore();
-      const email = 'elderly@careconnect.com';
-      const password = 'Elderly@123456';
-      const now = new Date().toISOString();
-
-      let uid;
-      try {
-        const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
-        uid = cred.user.uid;
-        await cred.user.updateProfile({ displayName: 'أحمد المسن' });
-      } catch (e) {
-        if (e.code === 'auth/email-already-in-use') {
-          const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
-          uid = cred.user.uid;
-        } else throw e;
-      }
-
-      await dataApi.save('users', {
-        uid, id: uid, email,
-        fullName: 'أحمد المسن',
-        role: 'elderly',
-        status: 'approved',
-        phone: '0501234567',
-        address: 'الرياض، حي النزهة',
-        createdAt: now
-      });
-
-      await dataApi.save('elder_profiles', {
-        uid, id: uid,
-        fullName: 'أحمد المسن',
-        email,
-        phone: '0501234567',
-        address: 'الرياض، حي النزهة',
-        emergencyContact: '',
-        specialNeeds: '',
-        createdAt: now
-      });
-
-      await firebase.auth().signOut();
-      showStatus('elderly-status', '✅ تم إنشاء حساب كبير السن بنجاح!', 'success');
-      btn.textContent = '✅ تم الإنشاء';
-    } catch (err) {
-      showStatus('elderly-status', '❌ خطأ: ' + err.message, 'error');
-      btn.disabled = false;
-      btn.textContent = 'إنشاء حساب كبير السن';
+      btn.textContent = oldText;
+      return false;
     }
   }
 
   async function createAll() {
-    const btn = document.querySelector('.btn-all');
-    btn.disabled = true;
-    btn.textContent = 'جارٍ إنشاء جميع الحسابات...';
-    showStatus('all-status', 'جارٍ إنشاء الحسابات...', 'info');
-    await createAdmin();
-    await createOrg();
-    await createVolunteer();
-    await createElderly();
-    showStatus('all-status', '✅ تم إنشاء جميع الحسابات بنجاح! يمكنك الآن تسجيل الدخول.', 'success');
-    btn.textContent = '✅ تم إنشاء جميع الحسابات';
+    showStatus('all-status', 'جارٍ إنشاء جميع الحسابات...', 'info');
+    let ok = true;
+    for (const key of ['admin', 'org', 'vol', 'elderly']) {
+      const r = await createOne(key);
+      if (!r) ok = false;
+    }
+    if (ok) {
+      showStatus('all-status', '🎉 جميع الحسابات جاهزة! اذهب إلى صفحة تسجيل الدخول', 'success');
+    } else {
+      showStatus('all-status', '⚠️ بعض الحسابات لم تُنشأ. راجع الأخطاء أعلاه.', 'error');
+    }
   }
 </script>
+
 </body>
 </html>

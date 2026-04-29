@@ -12,11 +12,7 @@ const path = require('path');
 require('dotenv').config();
 
 // Import route handlers
-const authRoutes = require('./routes/auth');
-const adminRoutes = require('./routes/admin');
-const volunteerRoutes = require('./routes/volunteer');
-const elderlyRoutes = require('./routes/elderly');
-const organizationRoutes = require('./routes/organization');
+const { router: authLocalRoutes } = require('./routes/auth-local');
 const dataRoutes = require('./routes/data');
 
 const app = express();
@@ -41,11 +37,7 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, '../public')));
 
 // API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/volunteer', volunteerRoutes);
-app.use('/api/elderly', elderlyRoutes);
-app.use('/api/organization', organizationRoutes);
+app.use('/api/auth', authLocalRoutes);
 app.use('/api/data', dataRoutes);
 
 // Health check endpoint

@@ -8,12 +8,18 @@ CareConnect is a full-stack Arabic web application (RTL) that connects elderly p
 ## Tech Stack
 - **Backend**: Node.js + Express.js
 - **Frontend**: HTML, CSS, Vanilla JavaScript
-- **Authentication**: Firebase Authentication (email/password) - login only
+- **Authentication**: Server-side local auth (`/api/auth/*`)
+  - Passwords hashed with Node `crypto.scrypt` (no external service)
+  - Sessions: random token in HTTP-only cookie `cc_session`, mapped to user via `sessions` collection
+  - Routes: `POST /api/auth/register`, `/login`, `/logout`, `GET /api/auth/me`, `POST /api/auth/ensure-test-account`
+  - Client helper: `public/js/auth-api.js` exposes `window.authApi`
+  - Server module: `src/routes/auth-local.js`
 - **Database**: Server-side JSON file store (`data.json`) accessed via REST `/api/data/*`
-  - Shared store across all users (no Firestore rules to configure)
+  - Shared store across all users (zero external setup)
   - Endpoints: GET/POST/PATCH/DELETE on `/api/data/:collection[/:id]`
-  - Helper file: `public/js/data-api.js` exposes `window.dataApi`
+  - Client helper: `public/js/data-api.js` exposes `window.dataApi`
   - Server module: `src/store.js` (auto-persists to disk on writes)
+- **Firebase**: Removed entirely. No Firebase SDK, no Firebase Auth, no Firestore.
 
 ## Project Structure
 ```
