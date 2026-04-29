@@ -146,7 +146,20 @@ The server will start on port 5000.
 - Account status checks (pending, approved, suspended)
 - Admin approval required for sensitive roles
 
+## Test Accounts (auto-seeded on startup)
+The server auto-seeds 4 demo accounts on every start via `src/seed.js` (idempotent — only creates if missing). They are also listed as one-click buttons inside a collapsible panel on `/login`.
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@careconnect.com | Admin@123456 |
+| Organization | org@careconnect.com | Org@123456 |
+| Volunteer | volunteer@careconnect.com | Vol@123456 |
+| Elderly | elderly@careconnect.com | Elderly@123456 |
+
 ## Recent Changes
+- **April 2026**: Auto-seed test accounts on server startup (`src/seed.js`)
+  - Eliminates the need to visit `/setup` manually after a fresh container
+  - Added a collapsible "demo accounts" panel on the login page with one-click fill
 - Initial project setup (January 2026)
 - Created complete backend with Express routes and controllers
 - Built frontend with role-based dashboards

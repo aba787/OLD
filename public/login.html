@@ -59,9 +59,39 @@
       <div class="auth-footer">
         <p>ليس لديك حساب؟ <a href="/register">أنشئ حساباً جديداً</a></p>
       </div>
+
+      <details style="margin-top:24px;border:1px dashed #cfe0e0;border-radius:10px;padding:12px 16px;background:#f7fbfb;">
+        <summary style="cursor:pointer;font-weight:600;color:#2d6a6a;">حسابات تجريبية جاهزة (اضغط للعرض)</summary>
+        <p style="margin:10px 0;font-size:0.85rem;color:#555;">اضغط على أي حساب لتعبئة البيانات تلقائياً ثم اضغط "تسجيل الدخول".</p>
+        <div id="demo-accounts" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </details>
     </div>
   </main>
 
+  <script>
+    const DEMO_ACCOUNTS = [
+      { label: '👑 مشرف', email: 'admin@careconnect.com', password: 'Admin@123456' },
+      { label: '🏢 منظمة', email: 'org@careconnect.com', password: 'Org@123456' },
+      { label: '🙋 متطوع', email: 'volunteer@careconnect.com', password: 'Vol@123456' },
+      { label: '👴 كبير سن', email: 'elderly@careconnect.com', password: 'Elderly@123456' }
+    ];
+    document.addEventListener('DOMContentLoaded', () => {
+      const wrap = document.getElementById('demo-accounts');
+      if (!wrap) return;
+      DEMO_ACCOUNTS.forEach(a => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.style.cssText = 'text-align:right;background:white;border:1px solid #d6e6e6;border-radius:8px;padding:10px 12px;font-family:inherit;cursor:pointer;font-size:0.85rem;';
+        btn.innerHTML = `<strong>${a.label}</strong> <span style="direction:ltr;display:inline-block;color:#666;margin-inline-start:8px;">${a.email}</span>`;
+        btn.addEventListener('click', () => {
+          document.getElementById('email').value = a.email;
+          document.getElementById('password').value = a.password;
+          document.getElementById('email').focus();
+        });
+        wrap.appendChild(btn);
+      });
+    });
+  </script>
   <script src="/js/auth-api.js"></script>
   <script src="/js/data-api.js"></script>
   <script src="/js/app.js"></script>

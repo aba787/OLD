@@ -1,0 +1,126 @@
+{
+  "users": {
+    "mojsffuzj6ovib": {
+      "uid": "mojsffuzj6ovib",
+      "id": "mojsffuzj6ovib",
+      "email": "admin@careconnect.com",
+      "fullName": "مشرف النظام",
+      "phone": "",
+      "address": "",
+      "role": "admin",
+      "status": "approved",
+      "createdAt": "2026-04-29T08:23:13.209Z"
+    },
+    "mojsffw9zied12": {
+      "uid": "mojsffw9zied12",
+      "id": "mojsffw9zied12",
+      "email": "org@careconnect.com",
+      "fullName": "منظمة رعاية",
+      "phone": "",
+      "address": "",
+      "role": "organization",
+      "status": "approved",
+      "createdAt": "2026-04-29T08:23:13.250Z",
+      "organizationId": "mojsffw9zied12"
+    },
+    "mojsffxe2l8w6j": {
+      "uid": "mojsffxe2l8w6j",
+      "id": "mojsffxe2l8w6j",
+      "email": "volunteer@careconnect.com",
+      "fullName": "متطوع تجريبي",
+      "phone": "",
+      "address": "",
+      "role": "volunteer",
+      "status": "approved",
+      "createdAt": "2026-04-29T08:23:13.294Z"
+    },
+    "mojsffym66920w": {
+      "uid": "mojsffym66920w",
+      "id": "mojsffym66920w",
+      "email": "elderly@careconnect.com",
+      "fullName": "أحمد المسن",
+      "phone": "",
+      "address": "",
+      "role": "elderly",
+      "status": "approved",
+      "createdAt": "2026-04-29T08:23:13.328Z"
+    }
+  },
+  "volunteer_profiles": {
+    "mojsffxe2l8w6j": {
+      "uid": "mojsffxe2l8w6j",
+      "id": "mojsffxe2l8w6j",
+      "fullName": "متطوع تجريبي",
+      "email": "volunteer@careconnect.com",
+      "phone": "",
+      "address": "",
+      "skills": [],
+      "availability": {},
+      "bio": "",
+      "totalHours": 0,
+      "completedRequests": 0,
+      "rating": 0,
+      "ratingCount": 0,
+      "verified": false,
+      "verifiedBy": null,
+      "createdAt": "2026-04-29T08:23:13.294Z"
+    }
+  },
+  "elder_profiles": {
+    "mojsffym66920w": {
+      "uid": "mojsffym66920w",
+      "id": "mojsffym66920w",
+      "fullName": "أحمد المسن",
+      "email": "elderly@careconnect.com",
+      "phone": "",
+      "address": "",
+      "emergencyContact": "",
+      "specialNeeds": "",
+      "createdAt": "2026-04-29T08:23:13.328Z"
+    }
+  },
+  "organizations": {
+    "mojsffw9zied12": {
+      "uid": "mojsffw9zied12",
+      "id": "mojsffw9zied12",
+      "organizationName": "منظمة رعاية للتطوع",
+      "registrationNumber": "",
+      "email": "org@careconnect.com",
+      "phone": "",
+      "address": "",
+      "description": "",
+      "website": "",
+      "verifiedVolunteers": [],
+      "createdAt": "2026-04-29T08:23:13.250Z"
+    }
+  },
+  "requests": {},
+  "complaints": {},
+  "sessions": {},
+  "credentials": {
+    "admin@careconnect.com": {
+      "uid": "mojsffuzj6ovib",
+      "salt": "5d0dd1e9d4e17aff5958f2f33d5245d0",
+      "hash": "608bd023662e8229c974b5f6340f7853c868d8d2b4d56c03761d85210eaaf5b7f80a7d4ab759428903e7e68d7ba3051c9b3f9235019d13c0c235a10d316b888f",
+      "email": "admin@careconnect.com"
+    },
+    "org@careconnect.com": {
+      "uid": "mojsffw9zied12",
+      "salt": "34dfac5b2946b30a2a418fe08836350e",
+      "hash": "81ff0c37b65a8e7807786e73c833bfda68ca287ab0d57ae9aeee182e2e3a2d26f6ba2f358d7b762cc43fc156bd24b451011d481d453b141a9ff18b5a1090936b",
+      "email": "org@careconnect.com"
+    },
+    "volunteer@careconnect.com": {
+      "uid": "mojsffxe2l8w6j",
+      "salt": "789ac87419b47c63d0b85f3a7369bcaa",
+      "hash": "f21a7d01f2157b28926f2ce0b4ca853ea2091af2073fc21ae99b598b5153f519f0b49723aaf83d0127ae2ec982abe07868ef852738f6d645245a03445cba2006",
+      "email": "volunteer@careconnect.com"
+    },
+    "elderly@careconnect.com": {
+      "uid": "mojsffym66920w",
+      "salt": "a4bb782ac3a2a7dcf3730916242e5ac6",
+      "hash": "32190b0635d843bd559ca18fda4a046e49216975d38046ad685efb589ff1e7f91da640e27a8e9634553ee38c19f16f0fd4ee4739967aeead4da0b054b5d2f4c3",
+      "email": "elderly@careconnect.com"
+    }
+  }
+}

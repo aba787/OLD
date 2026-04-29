@@ -14,6 +14,7 @@ require('dotenv').config();
 // Import route handlers
 const { router: authLocalRoutes } = require('./routes/auth-local');
 const dataRoutes = require('./routes/data');
+const { seedTestAccounts } = require('./seed');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -76,6 +77,13 @@ app.use((err, req, res, next) => {
   console.error('Server Error:', err);
   res.status(500).json({ error: 'Internal server error' });
 });
+
+// Seed test accounts so login works out of the box
+try {
+  seedTestAccounts();
+} catch (e) {
+  console.error('[seed] Failed to seed test accounts:', e.message);
+}
 
 // Start the server
 app.listen(PORT, '0.0.0.0', () => {
