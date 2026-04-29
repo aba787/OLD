@@ -164,6 +164,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="/js/firebase-config.js"></script>
+<script src="/js/data-api.js"></script>
 
 <script>
   function showStatus(id, message, type) {
@@ -200,17 +201,14 @@
         } else throw e;
       }
 
-      await db.collection('users').doc(uid).set({
-        uid,
-        email,
+      await dataApi.save('users', {
+        uid, id: uid, email,
         fullName: 'مشرف النظام',
         role: 'admin',
         status: 'approved',
-        phone: '',
-        address: '',
-        createdAt: now,
-        updatedAt: now
-      }, { merge: true });
+        phone: '', address: '',
+        createdAt: now
+      });
 
       await firebase.auth().signOut();
       showStatus('admin-status', '✅ تم إنشاء حساب المشرف بنجاح!', 'success');
@@ -246,31 +244,26 @@
         } else throw e;
       }
 
-      await db.collection('users').doc(uid).set({
-        uid,
-        email,
+      await dataApi.save('users', {
+        uid, id: uid, email,
         fullName: 'منظمة رعاية',
         role: 'organization',
         status: 'approved',
         organizationId: uid,
-        phone: '',
-        address: '',
-        createdAt: now,
-        updatedAt: now
-      }, { merge: true });
+        phone: '', address: '',
+        createdAt: now
+      });
 
-      await db.collection('organizations').doc(uid).set({
-        uid,
+      await dataApi.save('organizations', {
+        uid, id: uid,
         organizationName: 'منظمة رعاية للتطوع',
         email,
-        phone: '',
-        address: '',
+        phone: '', address: '',
         description: 'منظمة تجريبية',
         website: '',
         verifiedVolunteers: [],
-        createdAt: now,
-        updatedAt: now
-      }, { merge: true });
+        createdAt: now
+      });
 
       await firebase.auth().signOut();
       showStatus('org-status', '✅ تم إنشاء حساب المنظمة بنجاح!', 'success');
@@ -306,36 +299,26 @@
         } else throw e;
       }
 
-      await db.collection('users').doc(uid).set({
-        uid,
-        email,
+      await dataApi.save('users', {
+        uid, id: uid, email,
         fullName: 'متطوع تجريبي',
         role: 'volunteer',
         status: 'approved',
-        phone: '',
-        address: '',
-        createdAt: now,
-        updatedAt: now
-      }, { merge: true });
+        phone: '', address: '',
+        createdAt: now
+      });
 
-      await db.collection('volunteer_profiles').doc(uid).set({
-        uid,
+      await dataApi.save('volunteer_profiles', {
+        uid, id: uid,
         fullName: 'متطوع تجريبي',
         email,
-        phone: '',
-        address: '',
-        skills: [],
-        availability: {},
-        bio: '',
-        totalHours: 0,
-        completedRequests: 0,
-        rating: 0,
-        ratingCount: 0,
-        verified: false,
-        verifiedBy: null,
-        createdAt: now,
-        updatedAt: now
-      }, { merge: true });
+        phone: '', address: '',
+        skills: [], availability: {}, bio: '',
+        totalHours: 0, completedRequests: 0,
+        rating: 0, ratingCount: 0,
+        verified: false, verifiedBy: null,
+        createdAt: now
+      });
 
       await firebase.auth().signOut();
       showStatus('vol-status', '✅ تم إنشاء حساب المتطوع بنجاح!', 'success');
@@ -371,29 +354,26 @@
         } else throw e;
       }
 
-      await db.collection('users').doc(uid).set({
-        uid,
-        email,
+      await dataApi.save('users', {
+        uid, id: uid, email,
         fullName: 'أحمد المسن',
         role: 'elderly',
         status: 'approved',
         phone: '0501234567',
         address: 'الرياض، حي النزهة',
-        createdAt: now,
-        updatedAt: now
-      }, { merge: true });
+        createdAt: now
+      });
 
-      await db.collection('elder_profiles').doc(uid).set({
-        uid,
+      await dataApi.save('elder_profiles', {
+        uid, id: uid,
         fullName: 'أحمد المسن',
         email,
         phone: '0501234567',
         address: 'الرياض، حي النزهة',
         emergencyContact: '',
         specialNeeds: '',
-        createdAt: now,
-        updatedAt: now
-      }, { merge: true });
+        createdAt: now
+      });
 
       await firebase.auth().signOut();
       showStatus('elderly-status', '✅ تم إنشاء حساب كبير السن بنجاح!', 'success');

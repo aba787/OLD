@@ -68,14 +68,19 @@ async function handleLogin(e) {
     
     const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
-    
-    const db = firebase.firestore();
-    const userDoc = await db.collection('users').doc(user.uid).get();
-    
-    if (!userDoc.exists) {
-      console.log('User document not found, will be created on dashboard');
+
+    try {
+      await dataApi.get('users', user.uid);
+    } catch (e) {
+      await dataApi.save('users', {
+        uid: user.uid, id: user.uid,
+        email: user.email,
+        fullName: user.displayName || email.split('@')[0],
+        role: 'elderly', status: 'approved',
+        phone: '', address: ''
+      });
     }
-    
+
     successEl.textContent = 'تم تسجيل الدخول بنجاح! جارٍ التحويل...';
     successEl.classList.remove('hidden');
     
@@ -163,99 +168,52 @@ async function handleRegister(e) {
     
     await user.updateProfile({ displayName: fullName });
     
-    const db = firebase.firestore();
     const now = new Date().toISOString();
-    const status = 'approved';
-    
     const userData = {
-      uid: user.uid,
+      uid: user.uid, id: user.uid,
       email: user.email,
       fullName,
       phone: phone || '',
       address: address || '',
       role,
-      status,
-      createdAt: now,
-      updatedAt: now
+      status: 'approved',
+      createdAt: now
     };
-    
-    if (role === 'organization') {
-      userData.organizationId = user.uid;
-    }
-    
-    await db.collection('users').doc(user.uid).set(userData);
-    console.log('Created users/' + user.uid);
-    
+    if (role === 'organization') userData.organizationId = user.uid;
+    await dataApi.save('users', userData);
+
     if (role === 'elderly') {
-      const elderProfile = {
-        uid: user.uid,
-        fullName,
-        phone: phone || '',
-        address: address || '',
-        emergencyContact: '',
-        specialNeeds: '',
-        createdAt: now,
-        updatedAt: now
-      };
-      await db.collection('elder_profiles').doc(user.uid).set(elderProfile);
-      console.log('Created elder_profiles/' + user.uid);
+      await dataApi.save('elder_profiles', {
+        uid: user.uid, id: user.uid,
+        fullName, email: user.email,
+        phone: phone || '', address: address || '',
+        emergencyContact: '', specialNeeds: '',
+        createdAt: now
+      });
     } else if (role === 'volunteer') {
-      const volunteerProfile = {
-        uid: user.uid,
-        fullName,
-        email: user.email,
-        phone: phone || '',
-        address: address || '',
-        skills: [],
-        availability: {},
-        bio: '',
-        totalHours: 0,
-        completedRequests: 0,
-        rating: 0,
-        ratingCount: 0,
-        verified: false,
-        verifiedBy: null,
-        createdAt: now,
-        updatedAt: now
-      };
-      await db.collection('volunteer_profiles').doc(user.uid).set(volunteerProfile);
-      console.log('Created volunteer_profiles/' + user.uid);
+      await dataApi.save('volunteer_profiles', {
+        uid: user.uid, id: user.uid,
+        fullName, email: user.email,
+        phone: phone || '', address: address || '',
+        skills: [], availability: {}, bio: '',
+        totalHours: 0, completedRequests: 0,
+        rating: 0, ratingCount: 0,
+        verified: false, verifiedBy: null,
+        createdAt: now
+      });
     } else if (role === 'organization') {
       const orgName = document.getElementById('organizationName').value || fullName;
       const regNumber = document.getElementById('registrationNumber').value || '';
-      
-      const orgProfile = {
-        uid: user.uid,
+      await dataApi.save('organizations', {
+        uid: user.uid, id: user.uid,
         organizationName: orgName,
         registrationNumber: regNumber,
         email: user.email,
-        phone: phone || '',
-        address: address || '',
-        description: '',
-        website: '',
+        phone: phone || '', address: address || '',
+        description: '', website: '',
         verifiedVolunteers: [],
-        createdAt: now,
-        updatedAt: now
-      };
-      await db.collection('organizations').doc(user.uid).set(orgProfile);
-      console.log('Created organizations/' + user.uid);
-    }
-    
-    try {
-      const token = await user.getIdToken();
-      await apiRequest('/api/auth/register', {
-        method: 'POST',
-        body: JSON.stringify({
-          uid: user.uid,
-          email: user.email,
-          fullName,
-          phone,
-          address,
-          role
-        })
+        createdAt: now
       });
-    } catch (apiError) {
-      console.warn('Backend sync failed (profiles already in Firestore):', apiError.message);
     }
     
     let successMessage = 'تم إنشاء الحساب بنجاح! جارٍ التحويل...';

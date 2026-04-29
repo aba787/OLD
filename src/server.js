@@ -17,6 +17,7 @@ const adminRoutes = require('./routes/admin');
 const volunteerRoutes = require('./routes/volunteer');
 const elderlyRoutes = require('./routes/elderly');
 const organizationRoutes = require('./routes/organization');
+const dataRoutes = require('./routes/data');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -45,6 +46,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/volunteer', volunteerRoutes);
 app.use('/api/elderly', elderlyRoutes);
 app.use('/api/organization', organizationRoutes);
+app.use('/api/data', dataRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -66,6 +68,10 @@ app.get('/register', (req, res) => {
 
 app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/dashboard.html'));
+});
+
+app.get('/setup', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/setup.html'));
 });
 
 // Handle 404 - Page not found
