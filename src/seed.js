@@ -59,30 +59,23 @@ function ensureAccount(acc) {
   return { uid, created: true };
 }
 
-function linkVolunteerToOrg(volUid, orgUid) {
-  const org = store.get('organizations', orgUid);
+function unlinkVolunteerFromOrg(volUid, orgUid) {
   const volProfile = store.get('volunteer_profiles', volUid);
-  if (!org || !volProfile) return false;
-
-  const orgName = org.organizationName || 'منظمة رعاية للتطوع';
-  const now = new Date().toISOString();
-
-  if (!volProfile.verified) {
-    store.set('volunteer_profiles', volUid, {
-      verified: true,
-      verifiedBy: orgUid,
-      verifiedByOrg: orgUid,
-      verifiedByOrgName: orgName,
-      verifiedAt: now
+  if (volProfile && volProfile.verified) {
+    store.replace('volunteer_profiles', volUid, {
+      ...volProfile,
+      verified: false,
+      verifiedBy: null,
+      verifiedByOrg: null,
+      verifiedByOrgName: null,
+      verifiedAt: null
     });
   }
-
-  const list = Array.isArray(org.verifiedVolunteers) ? org.verifiedVolunteers : [];
-  if (!list.includes(volUid)) {
-    list.push(volUid);
-    store.set('organizations', orgUid, { verifiedVolunteers: list });
+  const org = store.get('organizations', orgUid);
+  if (org && Array.isArray(org.verifiedVolunteers) && org.verifiedVolunteers.includes(volUid)) {
+    const filtered = org.verifiedVolunteers.filter(id => id !== volUid);
+    store.replace('organizations', orgUid, { ...org, verifiedVolunteers: filtered });
   }
-  return true;
 }
 
 function seedTestAccounts() {
@@ -95,13 +88,13 @@ function seedTestAccounts() {
   }
 
   if (ids.vol && ids.org) {
-    linkVolunteerToOrg(ids.vol, ids.org);
+    unlinkVolunteerFromOrg(ids.vol, ids.org);
   }
 
   if (createdCount > 0) {
-    console.log(`[seed] Created ${createdCount} test account(s); volunteer linked to organization.`);
+    console.log(`[seed] Created ${createdCount} test account(s).`);
   } else {
-    console.log('[seed] All test accounts present; verified volunteer/org link.');
+    console.log('[seed] All test accounts present.');
   }
 }
 

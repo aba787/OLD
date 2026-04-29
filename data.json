@@ -61,12 +61,12 @@
       "completedRequests": 0,
       "rating": 0,
       "ratingCount": 0,
-      "verified": true,
-      "verifiedBy": "mojsffw9zied12",
+      "verified": false,
+      "verifiedBy": null,
       "createdAt": "2026-04-29T08:23:13.294Z",
-      "verifiedByOrg": "mojsffw9zied12",
-      "verifiedByOrgName": "منظمة رعاية للتطوع",
-      "verifiedAt": "2026-04-29T09:04:35.393Z"
+      "verifiedByOrg": null,
+      "verifiedByOrgName": null,
+      "verifiedAt": null
     }
   },
   "elder_profiles": {
@@ -93,9 +93,7 @@
       "address": "",
       "description": "",
       "website": "",
-      "verifiedVolunteers": [
-        "mojsffxe2l8w6j"
-      ],
+      "verifiedVolunteers": [],
       "createdAt": "2026-04-29T08:23:13.250Z"
     }
   },
