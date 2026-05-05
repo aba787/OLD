@@ -466,7 +466,7 @@ async function loadVolunteerDashboard(profile) {
 
   try {
     const allRequests = await dataApi.list('requests');
-    const available = allRequests.filter(r => r.status === 'pending');
+    const available = allRequests.filter(r => r.status === 'pending' && !(Array.isArray(r.rejectedBy) && r.rejectedBy.includes(currentUser.uid)));
     const mine = allRequests.filter(r => r.volunteerId === currentUser.uid);
     displayAvailableRequests(available);
     displayMyActiveRequests(mine);
@@ -545,7 +545,8 @@ function displayAvailableRequests(requests) {
         ${req.preferredDate ? `<span>التاريخ المفضل: ${formatDate(req.preferredDate)}</span>` : ''}
       </div>
       <div class="request-actions">
-        <button class="btn btn-primary btn-small" onclick="acceptRequest('${req.id}')">قبول الطلب</button>
+        <button class="btn btn-primary btn-small" onclick="acceptRequest('${req.id}')">قبول الطلب ✓</button>
+        <button class="btn btn-danger btn-small" onclick="rejectRequest('${req.id}')">رفض ✗</button>
       </div>
     </div>`).join('');
 }
@@ -580,6 +581,24 @@ async function acceptRequest(requestId) {
     showToast('تم قبول الطلب! ✓', 'success');
     loadVolunteerDashboard(userProfile);
   } catch (e) { showToast('فشل قبول الطلب', 'error'); }
+}
+
+async function rejectRequest(requestId) {
+  if (!confirm('هل أنت متأكد من رفض هذا الطلب؟')) return;
+  const reason = prompt('سبب الرفض (اختياري):') || '';
+  try {
+    let req;
+    try { req = await dataApi.get('requests', requestId); } catch { req = {}; }
+    const rejectedBy = Array.isArray(req.rejectedBy) ? req.rejectedBy : [];
+    if (!rejectedBy.includes(currentUser.uid)) rejectedBy.push(currentUser.uid);
+    await dataApi.update('requests', requestId, {
+      rejectedBy,
+      lastRejectionReason: reason,
+      lastRejectedAt: new Date().toISOString()
+    });
+    showToast('تم رفض الطلب', 'success');
+    loadVolunteerDashboard(userProfile);
+  } catch (e) { showToast('فشل رفض الطلب', 'error'); }
 }
 
 async function completeRequest(requestId) {
