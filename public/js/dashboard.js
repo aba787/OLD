@@ -809,10 +809,11 @@ async function loadOrganizationDashboard(profile) {
     try { org = await dataApi.get('organizations', currentUser.uid); }
     catch { org = await createRoleProfile(currentUser, { ...profile, role: 'organization' }); }
     const verifiedIds = org.verifiedVolunteers || [];
+    const rejectedIds = org.rejectedVolunteers || [];
 
     const allVolunteers = await dataApi.list('volunteer_profiles');
     const verifiedVols = allVolunteers.filter(v => verifiedIds.includes(v.uid));
-    const unverifiedVols = allVolunteers.filter(v => !verifiedIds.includes(v.uid));
+    const unverifiedVols = allVolunteers.filter(v => !verifiedIds.includes(v.uid) && !rejectedIds.includes(v.uid));
 
     document.getElementById('org-verified').textContent = verifiedVols.length;
     document.getElementById('org-pending-verifications').textContent = unverifiedVols.length;
@@ -853,6 +854,7 @@ function displayUnverifiedVolunteers(volunteers) {
       </div>
       <div class="user-item-actions">
         <button class="btn btn-success btn-small" onclick="verifyVolunteerByOrg('${vol.uid}', '${(vol.fullName || '').replace(/'/g, '')}')">قبول ✓</button>
+        <button class="btn btn-danger btn-small" onclick="rejectVolunteerByOrg('${vol.uid}', '${(vol.fullName || '').replace(/'/g, '')}')">رفض ✗</button>
       </div>
     </div>`).join('');
 }
@@ -869,6 +871,22 @@ async function verifyVolunteerByOrg(volunteerId, volunteerName) {
     showToast(`تم قبول المتطوع ${volunteerName} ✓`, 'success');
     loadOrganizationDashboard(userProfile);
   } catch (e) { showToast('فشل قبول المتطوع', 'error'); }
+}
+
+async function rejectVolunteerByOrg(volunteerId, volunteerName) {
+  if (!confirm(`هل أنت متأكد من رفض المتطوع ${volunteerName}؟`)) return;
+  const reason = prompt('سبب الرفض (اختياري):') || '';
+  try {
+    await dataApi.update('volunteer_profiles', volunteerId, {
+      rejectedByOrg: currentUser.uid,
+      rejectedByOrgName: userProfile.organizationName || userProfile.fullName,
+      rejectionReason: reason,
+      rejectedAt: new Date().toISOString()
+    });
+    await dataApi.arrayAdd('organizations', currentUser.uid, 'rejectedVolunteers', volunteerId);
+    showToast(`تم رفض المتطوع ${volunteerName}`, 'success');
+    loadOrganizationDashboard(userProfile);
+  } catch (e) { showToast('فشل رفض المتطوع', 'error'); }
 }
 
 async function handleUpdateOrgProfile(e) {
